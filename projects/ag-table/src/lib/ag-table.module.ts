@@ -11,7 +11,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DecimalPipe } from '@angular/common';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [

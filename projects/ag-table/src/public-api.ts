@@ -5,3 +5,4 @@
 export * from './lib/ag-table.service';
 export * from './lib/ag-table.component';
 export * from './lib/ag-table.module';
+export * from './lib/types/columns-definition.type';

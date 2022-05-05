@@ -4,9 +4,13 @@ import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { DecimalPipe } from '@angular/common';
 import { MatSelectChange } from '@angular/material/select';
-import { DataInterface } from '../../../test-table/src/app/app.component';
 import { FormControl, FormGroup } from '@angular/forms';
-import { __values } from 'tslib';
+import { Constants } from './constants/grid.constant';
+import { ColumnDefinition } from '../public-api';
+import { ColumnTypeService } from './services/column-type.service';
+import { AgTableService } from './ag-table.service';
+import { Columns } from './types/columns-data.type';
+import { DataInterface } from 'projects/test-table/src/app/interface/data.type';
 
 @Component({
   selector: 'lib-ag-table',
@@ -16,18 +20,18 @@ import { __values } from 'tslib';
 
 export class AgTableComponent implements OnInit, AfterViewInit {
   @Output() onGridReady: EventEmitter<any> = new EventEmitter();
-  @Input() dataSource: any[] = [];
-  @Input() columnDef: any[] = [];
+  @Input() dataSource: DataInterface[] = [];
+  @Input() columnDef: ColumnDefinition[] = [];
   @ViewChild(MatPaginator)
   paginator!: MatPaginator;
   @ViewChild(MatSort)
   sort!: MatSort;
   displayedColumns: string[] = this.columnDef.map(c => c.header)
-  data: any;
+  data = new MatTableDataSource(this.dataSource);
   filterDictionary = new Map<string, any>();
-  filters: any[] = [];
-  defaultValue = 'All';
-  list: any[] = [];
+  columns: Columns[] = [];
+  max: number = 0;
+
   form: FormGroup = new FormGroup({
     // 'Good To Trade': new FormControl(true),
     // 'Counterparty': new FormControl(true),
@@ -46,11 +50,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     // 'Collaterals': new FormControl(true)
   });
   showColumns: boolean = false;
-  ranges: any[] = [];
-  max: number = 0;
-  activeType: string | undefined;
-  defaultSteps: number = 2;
-  rangelist: string[] = [];
+  // ranges: any[] = [];
 
   // 'Good To Trade' = this.form.get("Good To Trade");
   // 'Counterparty' = this.form.get("Counterparty");
@@ -69,7 +69,8 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   // 'Collaterals' = this.form.get("Collaterals");
 
 
-  constructor(private _decimalPipe: DecimalPipe) {
+  constructor(private _decimalPipe: DecimalPipe, public columnTypeService: ColumnTypeService, public agTableService: AgTableService) {
+
   }
 
   ngOnInit(): void {
@@ -77,101 +78,15 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this.displayedColumns.forEach(col => {
       this.form.addControl(col, new FormControl(true));
     })
-    for (let col of this.columnDef) {
-      // console.log(col,"col")
-      this.list = [];
-      this.rangelist = [];
-      this.ranges = [];
-      //generates dropdown list for select 
-      this.dataSource.map(el => {
-        if (this.list.length > 0) {
-          if (!this.list.includes(el[col.field])) {
-            if (col.type == 'select' || col.type == 'search') {
-              this.list.push(el[col.field]);
-            }
-            if (col.type == 'range') {
-              if (typeof (el[col.field]) == 'string') {
-                console.log("jhjh")
-                const str = el[col.field].substring(0, el[col.field].length - 1);
-                const num = parseFloat(str)
-                console.log(num)
-                if (!this.list.includes(num)) {
-                  this.list.push(num);
-                }
-                this.ranges.push(num);
-              }
-            }
-          }
-        } else {
-          if (col.type == 'select' || col.type == 'search') {
-            this.list.push(el[col.field]);
-          }
-          if (col.type == 'range') {
-            if (typeof (el[col.field]) == 'string') {
-              const str = el[col.field].substring(0, el[col.field].length - 1);
-              const num = parseFloat(str)
-              this.list.push(num);
-              this.ranges.push(num);
-            }
-          }
-        }
-      })
+    this.agTableService.getColumnsData(this.dataSource,this.columnDef);
+    this.columns = this.agTableService.columns;
 
-      //generates dropdown list for range type
-      if (col.type == 'range') {
-        this.max = Math.max(...this.list);
-        console.log(col, this.max)
-        if (col.steps && col.steps !== '2') {
-          let steps = col.steps;
-          let startvalue = 0;
-          for (let i = steps; i > 0; i--) {
-            let range = i == 1 ? startvalue + ' to ' + (this.max / i) : startvalue + ' to ' + Math.round(this.max / i);
-            startvalue = Math.round(this.max / i);
-            this.rangelist.push(range)
-          }
-          console.log(this.rangelist)
-        }
-        else {
-          if (this.max > 1) {
-            this.rangelist = ['Less than or Equal to ' + Math.round(this.max / 2) + '%', 'Greater than ' + Math.round(this.max / 2) + '%']
-          } else {
-            this.rangelist = ['Less than or Equal to 1%']
-          }
-        }
-      }
-      if (col.type == 'range') {
-        this.rangelist.push('All');
-        this.filters.push({
-          field: col.field,
-          header: col.header,
-          type: col.type,
-          options: this.rangelist, //values of this field
-          symbol: col.symbol,
-          steps: col.steps || this.defaultSteps,
-          list: this.ranges, //dropdown options
-          defaultValue: this.defaultValue
-        })
-      } else {
-        this.list.push('All');
-        this.filters.push({
-          field: col.field,
-          header: col.header,
-          type: col.type,
-          options: this.list, //dropdown options == values of this field
-          defaultValue: this.defaultValue
-        })
-      }
-    }
-
-    // console.log(this.dataSource,this.filters)
     this.data = new MatTableDataSource(this.dataSource);
     this.data.filterPredicate = function (record: DataInterface, filter: any) {
-      console.log(filter, this.activeType)
       var map = new Map(JSON.parse(filter));
       let isMatch = false;
       for (let [key, value] of map) {
         let val = typeof (value) == 'string' ? value.split(',') : [];
-        console.log(val)
         let isMatchForRange = [];
         for (let x of val) {
           isMatchForRange.push(x == 'All' || record[key as keyof DataInterface] == x);
@@ -183,7 +98,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     };
   }
 
-  ngAfterViewInit() {
+  ngAfterViewInit():void {
     this.data.paginator = this.paginator;
     this.data.sort = this.sort;
     this.onGridReady.emit(this);
@@ -194,90 +109,134 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   //   this.data.filter = target.value?.trim()?.toLowerCase();
   // }
 
-  applyFilter(ob: any, filter: any) {
-    console.log(ob.value, filter)
-    if (ob.value.length > 0) {
-      // filter type == select
-      if (filter.type == 'select' || filter.type == 'search') {
-        this.filterDictionary.set(filter.field, ob.value);
-        var jsonString = JSON.stringify(Array.from(this.filterDictionary.entries()));
-        this.data.filter = jsonString;
+  applyFilter(ob:any, column: any):void {
+    console.log(ob,column)
+    if (ob.value.length) {
+      // column type == select
+      if (column.type == Constants.SELECT) {
+        if (ob.value.includes('All')) {
+          this.filterSelected(column.options, column);
+        } else {
+          const filteredSelectList: any[] = [];
+          column.options.forEach((col: string) => {
+            if (ob.value.includes(col)) {
+              if (!filteredSelectList.length) {
+                filteredSelectList.push(col);
+              } else {
+                if (!filteredSelectList.includes(col)) {
+                  filteredSelectList.push(col);
+                }
+              }
+            }
+          })
+
+          this.filterSelected(filteredSelectList, column);
+        }
       }
-      // filter type ==  range 
-      if (filter.type == 'range') {
-        console.log(filter.steps, "steps")
-        if (filter.steps == '2') {
+      // column type ==  range 
+      if (column.type == Constants.RANGE) {
+        if (column.steps == '2') {
+          let columnListForTwoSteps = column.list;
+          this.max = Math.max(...columnListForTwoSteps);
           let lesser = ob.value.find((elm: string) => elm.includes('Less') && elm.includes('Equal')
           )
           let greater = ob.value.find((elm: string) => elm.includes('Greater'))
           if (greater && !lesser) {
-            const value = filter.list.filter((el: number) => el > Math.round(this.max / 2))
-            this.filterRates(value, filter);
+            const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el > Math.round(this.max / 2))
+            this.filterRanges(filteredRangeListForTwoSteps, column);
           }
           if (lesser && !greater) {
-            const value = filter.list.filter((el: number) => el <= Math.round(this.max / 2))
-            this.filterRates(value, filter);
+            const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el <= Math.round(this.max / 2))
+            this.filterRanges(filteredRangeListForTwoSteps, column);
           }
           if (lesser && greater || ob.value.includes('All')) {
-            this.filterRates(filter.list, filter);
+            this.filterRanges(column.list, column);
           }
         } else {
-          console.log(ob.value, "ob.value")
           var numberArray: number[] = [];
-          let filteredRange: any[] = []
-          ob.value.map((elm: string) => {
+          let filteredRangeList: any[] = []
+
+          ob.value.forEach((elm: string) => {
             if (ob.value.includes('All')) {
-              filteredRange = filter.list;
+              filteredRangeList = column.list;
             } else {
               const stringArray = elm.split(' to ');
-              for (var i = 0; i < stringArray.length; i++) {
+              let i = 0;
+              while(i < stringArray.length){
                 numberArray.push(parseFloat(stringArray[i]));
+                i += 1;
               }
               const minimum = Math.min(...numberArray);
               const maximum = Math.max(...numberArray)
-              console.log(minimum, maximum, filter.list)
-
-              filteredRange = filter.list.filter((el: number) => el >= minimum && el <= maximum);
+              filteredRangeList = column.list.filter((el: number) => el >= minimum && el <= maximum);
             }
           })
-          this.filterRates(filteredRange, filter);
-          console.log(filteredRange)
+          this.filterRanges(filteredRangeList, column);
         }
       }
     }
     else {
-      // this.data.filter = '';
-      this.filterRates(this.ranges, filter);
+      if (column.type == Constants.RANGE) {
+        this.filterRanges(column.list, column);
+      } else if (column.type == Constants.SELECT) {
+        this.filterSelected(column.options, column)
+      }
     }
-    console.log(this.data.filter)
-    console.log(this.data, "tabledata");
   }
 
-  updateColumns(cd: any) {
-    console.log(cd)
-    this.columnDef.map(elm => {
+  //filter for search type
+  applyFilterForSearch(input: any, column: { type: string; field: string; }):void {
+    this.filterDictionary.set(column.field, input?.value);
+    this.setDataFilter();
+  }
+
+  updateColumns(cd: any):void {
+    this.columnDef.forEach(elm => {
       if (elm.header == cd) {
+        if (elm.selected == undefined && elm.selected == null) {
+          elm.selected = true;
+        }
         elm.selected = !elm.selected;
       }
     });
     this.displayedColumns = this.columnDef.filter(col => col.selected).map(c => c.header)
-    console.log("displayedColumns", this.displayedColumns, this.data);
   }
 
-  filterRates(value: any[], filter: any) {
-    console.log(filter);
+  //filter for range type
+  filterRanges(list: any[], column: { symbol: string; field: string; }):void {
     let filtered: any[] = [];
-    // if (value.length > 0) {
-    for (let x of value) {
-      if(filter.symbol == '%'){
-        filtered.push(x + filter.symbol);
-      }else{
-        filtered.push(x + ' ' +filter.symbol);
+    for (let x of list) {
+      if (column.symbol == '%') {
+        filtered.push(`${x}${column.symbol}`);
+      } else {
+        filtered.push(`${x} ${column.symbol}`);
       }
     }
-    this.filterDictionary.set(filter.field, filtered.join(','));
+    this.filterDictionary.set(column.field, filtered.join(','));
+    this.setDataFilter();
+  }
+
+  //  filter for select type
+  filterSelected(list: any[], column: { options: any; field: string; }):void {
+    this.filterDictionary.set(column.field, list.join(','));
+  this.setDataFilter();
+  }
+
+  setDataFilter():void{
     var jsonStr = JSON.stringify(Array.from(this.filterDictionary.entries()));
     this.data.filter = jsonStr;
-    // }
   }
+
+  //reset filters
+  resetFilters(): void{
+    this.data.filter = '';
+    this.columnDef.forEach(elm => elm.selected = true);
+    this.displayedColumns = this.columnDef.map(col => col.header);
+    console.log(this.data)
+    }
+
+  // updateChecks
+  updateChecksOfDropdownsList(){
+     
+  }  
 }
