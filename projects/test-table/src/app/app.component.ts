@@ -9,67 +9,101 @@ import { DecimalPipe } from '@angular/common';
 
 export class AppComponent {
   title = 'test-table';
-  dataSource: any[] = [];
+  dataSource: DataInterface[] = [];
   columnDef: any[] = [
     {
       header: 'Good To Trade',
-      field: 'Good To Trade'
+      field: 'Good To Trade',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Counterparty',
-      field: 'Counterparty'
+      field: 'Counterparty',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Repo Type',
-      field: 'Repo Type'
+      field: 'Repo Type',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Side',
-      field: 'Side'
+      field: 'Side',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Available Cash Settlement Amount',
-      field: 'Available Cash Settlement Amount'
+      field: 'Available Cash Settlement Amount',
+      selected: true,
+      type: 'range',
+      steps: '4',
+      symbol: 'Mio'
     },
     {
       header: 'Cash Settlement Currency',
-      field: 'Cash Settlement Currency'
+      field: 'Cash Settlement Currency',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Rate/Spread Over Benchmark',
-      field: 'Rate/Spread Over Benchmark'
+      field: 'Rate/Spread Over Benchmark',
+      selected: true,
+      type: 'range',
+      steps: '4',
+      symbol: '%'
     },
     {
       header: 'Floating',
-      field: 'Floating'
+      field: 'Floating',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Purchasing Date',
-      field: 'Purchasing Date'
+      field: 'Purchasing Date',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Repurchase Date',
-      field: 'Repurchase Date'
+      field: 'Repurchase Date',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Repo Term Type',
-      field: 'Repo Term Type'
+      field: 'Repo Term Type',
+      selected: true,
+      type: 'select'
     },
     {
       header: 'Market Sector',
-      field: 'Market Sector'
+      field: 'Market Sector',
+      selected: true,
+      type: 'search'
     },
     {
       header: 'Issuer Domicile',
-      field: 'Issuer Domicile'
+      field: 'Issuer Domicile',
+      selected: true,
+      type: 'search'
     },
     {
       header: 'Quality',
-      field: 'Quality'
+      field: 'Quality',
+      selected: true,
+      type: 'search'
     },
     {
       header: 'Collaterals',
-      field: 'Collaterals'
+      field: 'Collaterals',
+      selected: true,
+      type: 'search'
     },
   ];
   constructor(private _decimalPipe: DecimalPipe){}
@@ -140,7 +174,7 @@ export const DATA = [
       "repurchaseDate": "02.05.2022",
       "term": "T/N",
       "callableType": "T1",
-      "rate": 2,
+      "rate": 97.78,
       "haircut": 0,
       "counterRates": [],
       "callable": true,
@@ -203,7 +237,7 @@ export const DATA = [
       "repurchaseDate": "02.05.2022",
       "term": "T/N",
       "callableType": "T1",
-      "rate": "2.000",
+      "rate": 56,
       "haircut": 0,
       "counterRates": [],
       "callable": true,
@@ -246,7 +280,7 @@ export const DATA = [
       "repurchaseDate": "02.05.2022",
       "term": "T/N",
       "callableType": "T1",
-      "rate": 2,
+      "rate": 1.00,
       "haircut": 0,
       "counterRates": [],
       "callable": true,
@@ -259,4 +293,27 @@ export const DATA = [
       "__v": 0,
       "requestCreatorCompanyName": "Blue Bank"
   }
+  
 ]
+
+export interface DataInterface {
+  'Good To Trade'?: string;
+  Counterparty?: string;
+  'Repo Type'?: string;
+  Side?: string;
+  'Available Cash Settlement Amount'?: string;
+  'Cash Settlement Currency'?: string;
+  'Rate/Spread Over Benchmark'?: string;
+  Floating?: string;
+  'Purchasing Date'?: string;
+  'Repurchase  Date'?: string;
+  'Repo Term Type'?: string;
+  'Market Sector'?: string;
+  'Issuer Domicile'?: string;
+  Quality?: string;
+  Collaterals?: string;
+  hideAction?: boolean;
+  hideEditAction?: boolean;
+  canInitiate?: boolean;
+  id?: string;
+}

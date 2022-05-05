@@ -1,22 +1,71 @@
-<div class="example-header">
-    <mat-form-field>
-      <input matInput (keyup)="applyFilter($event.target)" placeholder="Filter">
-    </mat-form-field>
-  </div>
-  
-  <div class="example-container mat-elevation-z8">
-  
+<div class="table">
+  <button (click)="showColumns = !showColumns">Choose Columns</button>
+  <form *ngIf="showColumns" class="choose-columns" [formGroup]="form">
+    <mat-checkbox *ngFor="let cd of columnDef" [formControlName]="cd.header" (ngModelChange)="updateColumns(cd.header)">
+      {{cd.header}}</mat-checkbox>
+  </form>
+
+  <!-- <div class="example-header"> -->
+  <!-- <mat-form-field>
+        <input matInput (keyup)="applyFilter($event.target)" placeholder="Filter">
+      </mat-form-field> -->
+  <!-- <mat-form-field appearance="fill" *ngFor="let filter of filters">
+        <mat-label>{{ filter.header }}</mat-label>
+        <mat-select
+          [(value)]="filter.defaultValue"
+          (selectionChange)="applyFilter($event,filter)"
+        >
+          <mat-option *ngFor="let op of filter.options" [value]="op">
+            {{ op }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div> -->
+
+  <div class="table-container mat-elevation-z8" (mouseover)="showColumns = false">
+
     <mat-table [dataSource]="data" matSort>
+
+      <ng-container *ngFor="let column of filters" [matColumnDef]="column.header">
+        <!-- <mat-header-cell *matHeaderCellDef mat-sort-header>{{column}}</mat-header-cell>
   
-      <ng-container *ngFor="let column of columnDef" [matColumnDef]="column.header">
-        <mat-header-cell *matHeaderCellDef mat-sort-header> {{column.header}} </mat-header-cell>
-        <mat-cell *matCellDef="let row"> {{row[column.header]}} </mat-cell>
+          <mat-cell *matCellDef="let row"> {{row[column]}} </mat-cell> -->
+        <th class="header" mat-header-cell *matHeaderCellDef>
+          <!-- {{column.header}} -->
+          <mat-form-field appearance="fill">
+            <mat-label>{{ column.header }}</mat-label>
+            <mat-select *ngIf="column.type == 'select'" [(value)]="column.defaultValue"
+              (selectionChange)="applyFilter($event,column)">
+              <mat-option *ngFor="let option of column.options" [value]="option">
+                {{ option }}
+              </mat-option>
+            </mat-select>
+            <mat-select *ngIf="column.type == 'range'" multiple (selectionChange)="applyFilter($event,column)"
+              >
+              <mat-option *ngFor="let option of column.options" [value]="option">
+                {{ option }}
+              </mat-option>
+            </mat-select>
+            <!-- <mat-select *ngIf="column.type == 'search'" [(value)]="column.defaultValue"
+            (selectionChange)="applyFilter($event,column)">
+            <mat-option *ngFor="let option of column.options" [value]="option">
+              {{ option }}
+            </mat-option>
+          </mat-select> -->
+          <input matInput *ngIf="column.type == 'search'" (keyup)="applyFilter($event.target,column)" placeholder="Search">
+
+
+          </mat-form-field>
+
+        </th>
+        <td mat-cell *matCellDef="let row">{{row[column.header]}}</td>
       </ng-container>
 
       <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
       <mat-row *matRowDef="let row; columns: displayedColumns;">
-    </mat-row>
+      </mat-row>
     </mat-table>
-  
+
     <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]"></mat-paginator>
   </div>
+</div>
