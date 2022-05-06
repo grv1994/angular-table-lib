@@ -4,7 +4,7 @@
     <mat-checkbox *ngFor="let col of columnDef" [checked]="col.selected" [formControlName]="col.header" (ngModelChange)="updateColumns(col.header)">
       {{col.header}}</mat-checkbox>
   </form>
-  <button (click)= "resetFilters()">Reset Filters</button>    
+  <!-- <button (click)= "resetFilters()">Reset Filters</button>     -->
 
   <!-- <div class="example-header"> -->
   <!-- <mat-form-field>
