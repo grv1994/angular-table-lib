@@ -1,16 +1,17 @@
-import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
 import { DecimalPipe } from '@angular/common';
-import { MatSelectChange } from '@angular/material/select';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Constants } from './constants/grid.constant';
 import { ColumnDefinition } from '../public-api';
 import { ColumnTypeService } from './services/column-type.service';
 import { AgTableService } from './ag-table.service';
 import { Columns } from './types/columns-data.type';
-import { DataInterface } from 'projects/test-table/src/app/interface/data.type';
+import { DataSource } from './types/data-source.type';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
 
 @Component({
   selector: 'lib-ag-table',
@@ -20,12 +21,13 @@ import { DataInterface } from 'projects/test-table/src/app/interface/data.type';
 
 export class AgTableComponent implements OnInit, AfterViewInit {
   @Output() onGridReady: EventEmitter<any> = new EventEmitter();
-  @Input() dataSource: DataInterface[] = [];
+  @Input() dataSource: DataSource[] = [];
   @Input() columnDef: ColumnDefinition[] = [];
   @ViewChild(MatPaginator)
   paginator!: MatPaginator;
   @ViewChild(MatSort)
   sort!: MatSort;
+  @ViewChildren(MatSelect) matRef!: QueryList<MatSelect>
   displayedColumns: string[] = this.columnDef.map(c => c.header)
   data = new MatTableDataSource(this.dataSource);
   filterDictionary = new Map<string, any>();
@@ -82,14 +84,14 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this.columns = this.agTableService.columns;
 
     this.data = new MatTableDataSource(this.dataSource);
-    this.data.filterPredicate = function (record: DataInterface, filter: any) {
+    this.data.filterPredicate = function (record: DataSource, filter: any) {
       var map = new Map(JSON.parse(filter));
       let isMatch = false;
       for (let [key, value] of map) {
         let val = typeof (value) == 'string' ? value.split(',') : [];
         let isMatchForRange = [];
         for (let x of val) {
-          isMatchForRange.push(x == 'All' || record[key as keyof DataInterface] == x);
+          isMatchForRange.push(x == 'All' || record[key as keyof DataSource] == x);
         }
         isMatch = isMatchForRange.includes(true);
         if (!isMatchForRange.includes(true)) return false;
@@ -241,6 +243,9 @@ export class AgTableComponent implements OnInit, AfterViewInit {
 
   //reset filters
   resetFilters(): void {
+    this.matRef.forEach(matselect => {
+      matselect.options.forEach((data: MatOption) => data.select())
+    });
     this.data.filter = '';
     this.columnDef.forEach(elm => elm.selected = true);
     this.displayedColumns = this.columnDef.map(col => col.header);

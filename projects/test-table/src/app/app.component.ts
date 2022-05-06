@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ColumnDefinition } from 'projects/ag-table/src/public-api';
-import { DataInterface } from './interface/data.type';
+import { DataSource } from 'projects/ag-table/src/lib/types/data-source.type';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +11,7 @@ import { DataInterface } from './interface/data.type';
 
 export class AppComponent {
   title = 'test-table';
-  dataSource: DataInterface[] = [];
+  dataSource: DataSource[] = [];
   columnDef: ColumnDefinition[] = [
     {
       header: 'Good To Trade',
