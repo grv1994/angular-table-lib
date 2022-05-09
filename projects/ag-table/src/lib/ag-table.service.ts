@@ -106,17 +106,16 @@ export class AgTableService {
         else {
           let steps = parseFloat(col.steps);
           let startvalue = 0;
-          let i = steps;
-          while(i > 0){
-            let range = i == 1 ? {val: `${startvalue} to ${(this.max / i)}`,selected: false} : {val: `${startvalue} to ${Math.round(this.max / i)}`,selected: false};
-            startvalue = Math.round(this.max / i);
+          let i = 1;
+          let difference = this.max / steps;
+          while(i < steps+1){
+            let range = i == steps ? {val: `${startvalue} to ${(difference)*i }`,selected: false} : {val: `${startvalue} to ${Math.round(difference)*i}`,selected: false};
+            startvalue = Math.round(difference)*i;
             this.rangelist.push(range);
-            i -= 1;
+            i += 1;
           }
         }
       }
-
     }
   }
-
 }

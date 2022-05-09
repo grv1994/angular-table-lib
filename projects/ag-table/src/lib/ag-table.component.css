@@ -30,4 +30,14 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
     position: absolute;
     background-color: #ddd;
     color: rgb(0 0 0 / 87%);
+    margin-left: 20px;
+}
+
+.table-container{
+    margin: 20px ;
+    padding: 20px;
+}
+
+.choose-columns-btn{
+    margin: 10px 10px 0px 20px;
 }

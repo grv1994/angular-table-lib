@@ -1,11 +1,11 @@
 <div class="table">
-  <button (click)="showColumns = !showColumns">Choose Columns</button>
+  <button class="choose-columns-btn" mat-raised-button (click)="showColumns = !showColumns">Choose Columns</button>
   <form *ngIf="showColumns" class="choose-columns" [formGroup]="form">
     <mat-checkbox *ngFor="let col of columnDef" [checked]="col.selected" [formControlName]="col.header"
       (ngModelChange)="updateColumns(col.header)">
       {{col.header}}</mat-checkbox>
   </form>
-  <button (click)="resetFilters()">Reset Filters</button>
+  <button mat-raised-button (click)="resetFilters()">Reset Filters</button>
 
   <!-- <div class="example-header"> -->
   <!-- <mat-form-field>
