@@ -1,1 +1,1 @@
-export type ColumnType = "Search" | "Range" |"Select"
+export type ColumnType = "Search" | "Range" |"Select" | "Date"

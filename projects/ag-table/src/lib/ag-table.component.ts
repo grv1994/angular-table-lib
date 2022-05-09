@@ -27,14 +27,14 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   paginator!: MatPaginator;
   @ViewChild(MatSort)
   sort!: MatSort;
-  @ViewChildren(MatSelect) matRef!: QueryList<MatSelect>
+  @ViewChildren(MatSelect) matReference!: QueryList<MatSelect>
   displayedColumns: string[] = this.columnDef.map(c => c.header)
   data = new MatTableDataSource(this.dataSource);
   filterDictionary = new Map<string, any>();
   columns: Columns[] = [];
   max: number = 0;
 
-  form: FormGroup = new FormGroup({
+  columnsForm: FormGroup = new FormGroup({
     // 'Good To Trade': new FormControl(true),
     // 'Counterparty': new FormControl(true),
     // 'Repo Type': new FormControl(true),
@@ -51,40 +51,46 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     // 'Quality': new FormControl(true),
     // 'Collaterals': new FormControl(true)
   });
+
+  dateForm = new FormGroup({
+    start: new FormControl(),
+    end: new FormControl(),
+});
+
   showColumns: boolean = false;
   // ranges: any[] = [];
 
-  // 'Good To Trade' = this.form.get("Good To Trade");
-  // 'Counterparty' = this.form.get("Counterparty");
-  // 'Repo Type' = this.form.get("Repo Type");
-  // 'Side' = this.form.get("Side");
-  // 'Available Cash Settlement Amount' = this.form.get("Available Cash Settlement Amount");
-  // 'Cash Settlement Currency' = this.form.get("Cash Settlement Currency");
-  // 'Rate/Spread Over Benchmark' = this.form.get("Rate/Spread Over Benchmark");
-  // 'Floating' = this.form.get("Floating");
-  // 'Purchasing Date' = this.form.get("Purchasing Date");
-  // 'Repurchase Date' = this.form.get("Repurchase Date");
-  // 'Repo Term Type' = this.form.get("Repo Term Type");
-  // 'Market Sector' = this.form.get("Market Sector");
-  // 'Issuer Domicile' = this.form.get("Issuer Domicile");
-  // 'Quality' = this.form.get("Quality");
-  // 'Collaterals' = this.form.get("Collaterals");
+  // 'Good To Trade' = this.columnsForm.get("Good To Trade");
+  // 'Counterparty' = this.columnsForm.get("Counterparty");
+  // 'Repo Type' = this.columnsForm.get("Repo Type");
+  // 'Side' = this.columnsForm.get("Side");
+  // 'Available Cash Settlement Amount' = this.columnsForm.get("Available Cash Settlement Amount");
+  // 'Cash Settlement Currency' = this.columnsForm.get("Cash Settlement Currency");
+  // 'Rate/Spread Over Benchmark' = this.columnsForm.get("Rate/Spread Over Benchmark");
+  // 'Floating' = this.columnsForm.get("Floating");
+  // 'Purchasing Date' = this.columnsForm.get("Purchasing Date");
+  // 'Repurchase Date' = this.columnsForm.get("Repurchase Date");
+  // 'Repo Term Type' = this.columnsForm.get("Repo Term Type");
+  // 'Market Sector' = this.columnsForm.get("Market Sector");
+  // 'Issuer Domicile' = this.columnsForm.get("Issuer Domicile");
+  // 'Quality' = this.columnsForm.get("Quality");
+  // 'Collaterals' = this.columnsForm.get("Collaterals");
 
+  // get fromDate() { return this.dateForm.get('start').value; }
+  // get toDate() { return this.dateForm.get('end').value; }
 
-  constructor(private _decimalPipe: DecimalPipe, public columnTypeService: ColumnTypeService, public agTableService: AgTableService) {
-
-  }
+  constructor(private _decimalPipe: DecimalPipe, public columnTypeService: ColumnTypeService, public agTableService: AgTableService) {}
 
   ngOnInit(): void {
     this.displayedColumns = this.columnDef.map(c => c.header);
     this.displayedColumns.forEach(col => {
-      this.form.addControl(col, new FormControl(true));
+      this.columnsForm.addControl(col, new FormControl(true));
     })
     this.agTableService.getColumnsData(this.dataSource, this.columnDef);
     this.columns = this.agTableService.columns;
 
     this.data = new MatTableDataSource(this.dataSource);
-    this.data.filterPredicate = function (record: DataSource, filter: any) {
+    this.data.filterPredicate = (record: DataSource, filter: any) => {
       var map = new Map(JSON.parse(filter));
       let isMatch = false;
       for (let [key, value] of map) {
@@ -96,6 +102,13 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         isMatch = isMatchForRange.includes(true);
         if (!isMatchForRange.includes(true)) return false;
       }
+      // if (this.dateForm.get('start')?.value && this.dateForm.get('end')?.value) {
+      //   let dates = ['Repurchase Date', 'Purchasing Date'];
+      //   for(let key of dates){
+      //     return record[key as keyof DataSource] >= this.dateForm.get('start')?.value && 
+      //     record[key as keyof DataSource] >= this.dateForm.get('end')?.value
+      //   }
+      // }
       return isMatch;
     };
   }
@@ -112,7 +125,6 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   // }
 
   applyFilter(ob: { value: any; }, column: { type: any; list?: any; options: any; field: string; steps?: any; symbol?: string }): void {
-    // console.log(ob,column)
     if (ob.value.length) {
       // column type == select
       if (column.type == Constants.SELECT) {
@@ -128,6 +140,31 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         this.filterRanges(column.list, column);
       } else if (column.type == Constants.SELECT) {
         this.filterSelected(column.options, column)
+      }
+    }
+  }
+
+  toggleCheckBox(column: any, field: any, value: any) {
+    value.selected = !value.selected;
+    if (value.val == 'All' && value.selected) {
+      column = column.map((col: any) => {col.selected = true; return col});
+      field.options.forEach( (item : MatOption) => {
+        item.select();
+      });
+    } else {
+      if (value.selected) {
+        const allSelected = column.filter((col: any) => col.val !== 'All' && col.selected).length === column.length - 1;
+        if (allSelected) {
+          column = column.map((col: any) => {col.selected = true; return col});
+          field.options.forEach( (item : MatOption) => {
+            item.select();
+          });
+        }
+      } else {
+        column = column.map((col: any) => {if (col.val === 'All') col.selected = false; return col});
+        field.options.forEach( (item : MatOption) => {
+          item.value === 'All' && item.deselect();
+        });
       }
     }
   }
@@ -201,6 +238,12 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this.filterDictionary.set(column.field, input?.value);
     this.setDataFilter();
   }
+
+  //apply filter for date type
+  applyFilterForDate(input: any, column: { type: string; field: string; }): void {
+    this.filterDictionary.set(column.field, input?.value);
+    this.setDataFilter();
+  }
   
   // filter columns
   updateColumns(cd: any): void {
@@ -212,7 +255,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         elm.selected = !elm.selected;
       }
     });
-    this.displayedColumns = this.columnDef.filter(col => col.selected).map(c => c.header)
+    this.displayedColumns = this.columnDef.filter(col => col.selected).map(c => c.header);
   }
 
   //filter for range type
@@ -243,13 +286,16 @@ export class AgTableComponent implements OnInit, AfterViewInit {
 
   //reset filters
   resetFilters(): void {
-    this.matRef.forEach(matselect => {
+    this.matReference.forEach(matselect => {
       matselect.options.forEach((data: MatOption) => data.select())
     });
     this.data.filter = '';
-    this.columnDef.forEach(elm => elm.selected = true);
-    this.displayedColumns = this.columnDef.map(col => col.header);
-    console.log(this.data)
+    this.columnDef.forEach(elm => {
+      elm.selected = true;
+      this.columnsForm.patchValue({[elm.header]: true});
+    });
+    console.log(this.columnDef)
+    this.displayedColumns = this.columnDef.map(col => col.header);      
   }
 
   // updateChecks

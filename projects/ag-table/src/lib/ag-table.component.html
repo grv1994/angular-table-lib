@@ -1,7 +1,7 @@
 <div class="table">
   <button class="choose-columns-btn" mat-raised-button (click)="showColumns = !showColumns">Choose Columns</button>
-  <form *ngIf="showColumns" class="choose-columns" [formGroup]="form">
-    <mat-checkbox *ngFor="let col of columnDef" [checked]="col.selected" [formControlName]="col.header"
+  <form *ngIf="showColumns" class="choose-columns" [formGroup]="columnsForm">
+    <mat-checkbox *ngFor="let col of columnDef" [formControlName]="col.header"
       (ngModelChange)="updateColumns(col.header)">
       {{col.header}}</mat-checkbox>
   </form>
@@ -36,18 +36,50 @@
           <!-- {{column.header}} -->
           <mat-form-field appearance="fill">
             <mat-label>{{ column.header }}</mat-label>
-            <mat-select *ngIf="columnTypeService.isSelect(column)" multiple [value]="column.options"
+            <mat-select #matRef1 *ngIf="columnTypeService.isSelect(column)" multiple
               (selectionChange)="applyFilter($event,column)">
-              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val">
+              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val" (click)="toggleCheckBox(column.listWithChecks, matRef1, option)">
                 {{ option.val }}
               </mat-option>
             </mat-select>
-            <mat-select #matRef *ngIf="columnTypeService.isRange(column)" multiple [value]="column.options"
+            <mat-select #matRef *ngIf="columnTypeService.isRange(column)" multiple
               (selectionChange)="applyFilter($event,column)">
-              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val">
+              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val" (click)="toggleCheckBox(column.listWithChecks, matRef, option)">
                 {{ option.val }}
               </mat-option>
             </mat-select>
+            <div *ngIf="columnTypeService.isDate(column)" class="date-block__list" [formGroup]="dateForm">
+              <!-- <mat-form-field appearance="fill"> -->
+                <!-- <mat-label>Enter a date range</mat-label> -->
+                <!-- <mat-date-range-input [rangePicker]="picker" [formGroup]="dateForm"> -->
+                  <!-- <input matStartDate formControlName="start" placeholder="Start date"> -->
+                  <!-- <input matEndDate formControlName="end" placeholder="End date"> -->
+                <!-- </mat-date-range-input> -->
+                <!-- <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint> -->
+                <!-- <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle> -->
+                <!-- <mat-date-range-picker #picker></mat-date-range-picker> -->
+                <!-- <div class="date-block__list"> -->
+                  <!-- <mat-form-field> -->
+                    <input matInput 
+                      [matDatepicker]="start" 
+                      placeholder="From Date" 
+                      formControlName="start" (change)="applyFilterForDate($event,column)">
+                    <mat-datepicker-toggle matSuffix [for]="start"></mat-datepicker-toggle>
+                    <mat-datepicker #start></mat-datepicker>
+                  <!-- </mat-form-field> -->
+                <!-- </div> -->
+                  <!-- <div class="date-block__list"> -->
+                  <!-- <mat-form-field> -->
+                    <input matInput 
+                      [matDatepicker]="end" 
+                      placeholder="To Date" 
+                      formControlName="end" (change)="applyFilterForDate($event,column)">
+                    <mat-datepicker-toggle matSuffix [for]="end"></mat-datepicker-toggle>
+                    <mat-datepicker #end></mat-datepicker>
+                  <!-- </mat-form-field> -->
+                <!-- </div> -->
+              
+            </div>
             <!-- <mat-select *ngIf="column.type == 'search'" [(value)]="column.defaultValue"
             (selectionChange)="applyFilter($event,column)">
             <mat-option *ngFor="let option of column.options" [value]="option">

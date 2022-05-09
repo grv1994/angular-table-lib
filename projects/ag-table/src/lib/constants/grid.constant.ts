@@ -1,5 +1,6 @@
 export const Constants = {
  SELECT: 'Select',
  SEARCH: 'Search',
- RANGE: 'Range'
+ RANGE: 'Range',
+ DATE: 'Date'
 }

@@ -20,5 +20,9 @@ export class ColumnTypeService {
     isRange(column: ColumnDefinition) {
         return column.type == Constants.RANGE;
     }
+
+    isDate(column: ColumnDefinition){
+        return column.type == Constants.DATE;
+    }
 }
 
