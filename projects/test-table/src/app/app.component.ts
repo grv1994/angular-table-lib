@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ColumnDefinition } from 'projects/ag-table/src/public-api';
 import { DataSource } from 'projects/ag-table/src/lib/types/data-source.type';
 
@@ -69,13 +69,13 @@ export class AppComponent {
       header: 'Purchasing Date',
       field: 'Purchasing Date',
       selected: true,
-      type: 'Select'
+      type: 'Date'
     },
     {
       header: 'Repurchase Date',
       field: 'Repurchase Date',
       selected: true,
-      type: 'Select'
+      type: 'Date'
     },
     {
       header: 'Repo Term Type',
@@ -108,6 +108,8 @@ export class AppComponent {
       type: 'Search'
     },
   ];
+  pipe: DatePipe = new DatePipe('en-US');
+
   constructor(private _decimalPipe: DecimalPipe) { }
 
   async ngOnInit() {
@@ -129,13 +131,13 @@ export class AppComponent {
         'Cash Settlement Currency': data.currency,
         'Rate/Spread Over Benchmark': data.rate + '%',
         'Floating': data?.rateType === 'FLOAT' ? '' : '-',
-        'Purchasing Date': data.purchaseDate,
-        'Repurchase Date': data.repurchaseDate || '-',
+        'Purchasing Date': this.pipe.transform(new Date(data.purchaseDateStamp),'yyyy/MM/dd') || '-',
+        'Repurchase Date': this.pipe.transform(new Date(data.repurchaseDateStamp),'yyyy/MM/dd') || '-',
         'Repo Term Type': data.requestType === 'STANDARD' ? data.requestType + ' - ' + data.term : data.requestType?.replace('_', ' '),
         'Market Sector': data.marketSector?.length ? data.marketSector.join(', ') : '-',
         'Issuer Domicile': data.issuerDomicile?.length ? data.issuerDomicile.join(', ') : '-',
         'Quality': data.quality?.length ? data.quality.join(', ') : '-',
-        'Collaterals': data.offerBidType === 'B' ? data.collateral?.length ? data.collateral.map(collateral => collateral.isin).join(', ') : '-' : data.selectedCollaterals?.length ? data.selectedCollaterals.map((selectedCollaterals: any) => selectedCollaterals.isin).join(', ') : '-',
+        'Collaterals': data.offerBidType === 'B' ? data.collateral?.length ? data.collateral.map(collateral => collateral.isin).join(',') : '-' : data.selectedCollaterals?.length ? data.selectedCollaterals.map((selectedCollaterals: any) => selectedCollaterals.isin).join(',') : '-',
         'hideAction': true,
         'hideEditAction': true,
         'canInitiate': true,
@@ -182,7 +184,7 @@ export const DATA = [
     "callable": true,
     "requestCreatorUser": "62171b64a97f75076b9106e9",
     "requestCreatorCompany": "62171b64a97f75076b9106dd",
-    "purchaseDateStamp": "2022-04-29T00:00:00.000Z",
+    "purchaseDateStamp": "2022-03-29T00:00:00.000Z",
     "repurchaseDateStamp": "2022-05-02T00:00:00.000Z",
     "createdAt": "2022-04-28T06:56:25.705Z",
     "updatedAt": "2022-04-28T06:56:25.705Z",
@@ -245,8 +247,8 @@ export const DATA = [
     "callable": true,
     "requestCreatorUser": "6204c36fa90ddc07b09bdeba",
     "requestCreatorCompany": "6204c36fa90ddc07b09bdeb2",
-    "purchaseDateStamp": "2022-04-29T00:00:00.000Z",
-    "repurchaseDateStamp": "2022-05-02T00:00:00.000Z",
+    "purchaseDateStamp": "2022-01-29T00:00:00.000Z",
+    "repurchaseDateStamp": "2022-04-02T00:00:00.000Z",
     "createdAt": "2022-04-28T06:42:14.234Z",
     "updatedAt": "2022-04-28T06:42:14.234Z",
     "__v": 0,
@@ -289,7 +291,7 @@ export const DATA = [
     "requestCreatorUser": "62171b64a97f75076b9106e9",
     "requestCreatorCompany": "62171b64a97f75076b9106dd",
     "purchaseDateStamp": "2022-04-29T00:00:00.000Z",
-    "repurchaseDateStamp": "2022-05-02T00:00:00.000Z",
+    "repurchaseDateStamp": "2022-07-02T00:00:00.000Z",
     "createdAt": "2022-04-28T06:09:18.336Z",
     "updatedAt": "2022-04-28T06:09:18.336Z",
     "__v": 0,

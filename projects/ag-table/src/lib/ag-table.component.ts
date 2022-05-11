@@ -2,7 +2,7 @@ import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryLis
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup } from '@angular/forms';
 import { Constants } from './constants/grid.constant';
 import { ColumnDefinition } from '../public-api';
@@ -12,6 +12,10 @@ import { Columns } from './types/columns-data.type';
 import { DataSource } from './types/data-source.type';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
+export type filterType = {
+  column: string,
+  filters: string[]
+}
 
 @Component({
   selector: 'lib-ag-table',
@@ -21,6 +25,7 @@ import { MatOption } from '@angular/material/core';
 
 export class AgTableComponent implements OnInit, AfterViewInit {
   @Output() onGridReady: EventEmitter<any> = new EventEmitter();
+  @Output() getAllFilters: EventEmitter<any> = new EventEmitter();
   @Input() dataSource: DataSource[] = [];
   @Input() columnDef: ColumnDefinition[] = [];
   @ViewChild(MatPaginator)
@@ -30,56 +35,18 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   @ViewChildren(MatSelect) matReference!: QueryList<MatSelect>
   displayedColumns: string[] = this.columnDef.map(c => c.header)
   data = new MatTableDataSource(this.dataSource);
-  filterDictionary = new Map<string, any>();
+  filterDictionary = new Map<string, string>();
   columns: Columns[] = [];
   max: number = 0;
-
-  columnsForm: FormGroup = new FormGroup({
-    // 'Good To Trade': new FormControl(true),
-    // 'Counterparty': new FormControl(true),
-    // 'Repo Type': new FormControl(true),
-    // 'Side': new FormControl(true),
-    // 'Available Cash Settlement Amount': new FormControl(true),
-    // 'Cash Settlement Currency': new FormControl(true),
-    // 'Rate/Spread Over Benchmark': new FormControl(true),
-    // 'Floating': new FormControl(true),
-    // 'Purchasing Date': new FormControl(true),
-    // 'Repurchase Date': new FormControl(true),
-    // 'Repo Term Type': new FormControl(true),
-    // 'Market Sector': new FormControl(true),
-    // 'Issuer Domicile': new FormControl(true),
-    // 'Quality': new FormControl(true),
-    // 'Collaterals': new FormControl(true)
-  });
-
-  dateForm = new FormGroup({
-    start: new FormControl(),
-    end: new FormControl(),
-});
-
+  columnsForm: FormGroup = new FormGroup({});
+  pipe: DatePipe = new DatePipe('en-US');
   showColumns: boolean = false;
-  // ranges: any[] = [];
+  datesColumns: { [x: string]: { start: any; end: any; }; }[] = [];
+  allFilters: { column: string; filters: string[]; type: any; }[] | undefined;
+  startDate: string | null | undefined;
+  endDate: string | null | undefined;
 
-  // 'Good To Trade' = this.columnsForm.get("Good To Trade");
-  // 'Counterparty' = this.columnsForm.get("Counterparty");
-  // 'Repo Type' = this.columnsForm.get("Repo Type");
-  // 'Side' = this.columnsForm.get("Side");
-  // 'Available Cash Settlement Amount' = this.columnsForm.get("Available Cash Settlement Amount");
-  // 'Cash Settlement Currency' = this.columnsForm.get("Cash Settlement Currency");
-  // 'Rate/Spread Over Benchmark' = this.columnsForm.get("Rate/Spread Over Benchmark");
-  // 'Floating' = this.columnsForm.get("Floating");
-  // 'Purchasing Date' = this.columnsForm.get("Purchasing Date");
-  // 'Repurchase Date' = this.columnsForm.get("Repurchase Date");
-  // 'Repo Term Type' = this.columnsForm.get("Repo Term Type");
-  // 'Market Sector' = this.columnsForm.get("Market Sector");
-  // 'Issuer Domicile' = this.columnsForm.get("Issuer Domicile");
-  // 'Quality' = this.columnsForm.get("Quality");
-  // 'Collaterals' = this.columnsForm.get("Collaterals");
-
-  // get fromDate() { return this.dateForm.get('start').value; }
-  // get toDate() { return this.dateForm.get('end').value; }
-
-  constructor(private _decimalPipe: DecimalPipe, public columnTypeService: ColumnTypeService, public agTableService: AgTableService) {}
+  constructor(private _decimalPipe: DecimalPipe, public columnTypeService: ColumnTypeService, public agTableService: AgTableService) { }
 
   ngOnInit(): void {
     this.displayedColumns = this.columnDef.map(c => c.header);
@@ -88,27 +55,25 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     })
     this.agTableService.getColumnsData(this.dataSource, this.columnDef);
     this.columns = this.agTableService.columns;
-
+    let datesHeaders = this.columnDef.filter(c => this.columnTypeService.isDate(c)).map(c => c.header);
+    for (let header of datesHeaders) {
+      this.datesColumns.push({ [header]: { start: this.startDate, end: this.endDate } });
+    }
     this.data = new MatTableDataSource(this.dataSource);
     this.data.filterPredicate = (record: DataSource, filter: any) => {
+      // console.log(filter)
       var map = new Map(JSON.parse(filter));
       let isMatch = false;
       for (let [key, value] of map) {
         let val = typeof (value) == 'string' ? value.split(',') : [];
         let isMatchForRange = [];
         for (let x of val) {
-          isMatchForRange.push(x == 'All' || record[key as keyof DataSource] == x);
+          let includes = record[key as keyof DataSource].split(',').includes(x)
+          isMatchForRange.push(x == 'All' || includes);
         }
         isMatch = isMatchForRange.includes(true);
         if (!isMatchForRange.includes(true)) return false;
       }
-      // if (this.dateForm.get('start')?.value && this.dateForm.get('end')?.value) {
-      //   let dates = ['Repurchase Date', 'Purchasing Date'];
-      //   for(let key of dates){
-      //     return record[key as keyof DataSource] >= this.dateForm.get('start')?.value && 
-      //     record[key as keyof DataSource] >= this.dateForm.get('end')?.value
-      //   }
-      // }
       return isMatch;
     };
   }
@@ -124,7 +89,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   //   this.data.filter = target.value?.trim()?.toLowerCase();
   // }
 
-  applyFilter(ob: { value: any; }, column: { type: any; list?: any; options: any; field: string; steps?: any; symbol?: string }): void {
+  applyFilter(ob: { value: any; }, column: Columns): void {
     if (ob.value.length) {
       // column type == select
       if (column.type == Constants.SELECT) {
@@ -137,32 +102,34 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     }
     else {
       if (column.type == Constants.RANGE) {
-        this.filterRanges(column.list, column);
+        if (column.list) {
+          this.filterRanges(column.list, column);
+        }
       } else if (column.type == Constants.SELECT) {
         this.filterSelected(column.options, column)
       }
     }
   }
 
-  toggleCheckBox(column: any, field: any, value: any) {
+  toggleCheckBox(column: { val: string, selected: boolean }[], field: MatSelect, value: { selected: boolean; val: string; }) {
     value.selected = !value.selected;
     if (value.val == 'All' && value.selected) {
-      column = column.map((col: any) => {col.selected = true; return col});
-      field.options.forEach( (item : MatOption) => {
+      column = column.map(col => { col.selected = true; return col });
+      field.options.forEach((item: MatOption) => {
         item.select();
       });
     } else {
       if (value.selected) {
-        const allSelected = column.filter((col: any) => col.val !== 'All' && col.selected).length === column.length - 1;
+        const allSelected = column.filter(col => col.val !== 'All' && col.selected).length === column.length - 1;
         if (allSelected) {
-          column = column.map((col: any) => {col.selected = true; return col});
-          field.options.forEach( (item : MatOption) => {
+          column = column.map(col => { col.selected = true; return col });
+          field.options.forEach((item: MatOption) => {
             item.select();
           });
         }
       } else {
-        column = column.map((col: any) => {if (col.val === 'All') col.selected = false; return col});
-        field.options.forEach( (item : MatOption) => {
+        column = column.map(col => { if (col.val === 'All') col.selected = false; return col });
+        field.options.forEach((item: MatOption) => {
           item.value === 'All' && item.deselect();
         });
       }
@@ -170,7 +137,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   // filtering if its select case
-  handleSelectFilterCase(ob: { value: string[]; }, column: { type: any; list?: any; options: any; field: string; steps?: any; symbol?: string }) {
+  handleSelectFilterCase(ob: { value: string[]; }, column: Columns) {
     if (ob.value.includes('All')) {
       this.filterSelected(column.options, column);
     } else {
@@ -192,61 +159,64 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   //filtering for range case 
-  handleRangeFilterCase(column: { type: any; list?: any; options: any; field: string; steps?: any; symbol?: string }, ob: { value: string[]; }) {
-    if (column.steps == '2') {
-      let columnListForTwoSteps = column.list;
-      this.max = Math.max(...columnListForTwoSteps);
-      let lesser = ob.value.find((elm: string) => elm.includes('Less') && elm.includes('Equal')
-      )
-      let greater = ob.value.find((elm: string) => elm.includes('Greater'))
-      if (greater && !lesser) {
-        const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el > Math.round(this.max / 2))
-        this.filterRanges(filteredRangeListForTwoSteps, column);
-      }
-      if (lesser && !greater) {
-        const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el <= Math.round(this.max / 2))
-        this.filterRanges(filteredRangeListForTwoSteps, column);
-      }
-      if (lesser && greater || ob.value.includes('All')) {
-        this.filterRanges(column.list, column);
-      }
-    } else {
-      var numberArray: number[] = [];
-      let filteredRangeList: any[] = []
-
-      ob.value.forEach((elm: string) => {
-        if (ob.value.includes('All')) {
-          filteredRangeList = column.list;
-        } else {
-          const stringArray = elm.split(' to ');
-          let i = 0;
-          while (i < stringArray.length) {
-            numberArray.push(parseFloat(stringArray[i]));
-            i += 1;
-          }
-          const minimum = Math.min(...numberArray);
-          const maximum = Math.max(...numberArray)
-          filteredRangeList = column.list.filter((el: number) => el >= minimum && el <= maximum);
+  handleRangeFilterCase(column: Columns, ob: { value: string[]; }) {
+    if (column.list) {
+      if (column.steps == '2') {
+        let columnListForTwoSteps = column.list;
+        this.max = Math.max(...columnListForTwoSteps);
+        let lesser = ob.value.find((elm: string) => elm.includes('Less') && elm.includes('Equal')
+        )
+        let greater = ob.value.find((elm: string) => elm.includes('Greater'))
+        if (greater && !lesser) {
+          const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el > Math.round(this.max / 2))
+          this.filterRanges(filteredRangeListForTwoSteps, column);
         }
-      })
-      this.filterRanges(filteredRangeList, column);
+        if (lesser && !greater) {
+          const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el <= Math.round(this.max / 2))
+          this.filterRanges(filteredRangeListForTwoSteps, column);
+        }
+        if (lesser && greater || ob.value.includes('All')) {
+          this.filterRanges(column.list, column);
+        }
+      } else {
+        var numberArray: number[] = [];
+        let filteredRangeList: any[] | undefined = []
+
+        ob.value.forEach((elm: string) => {
+          if (ob.value.includes('All')) {
+            filteredRangeList = column.list;
+          } else {
+            const stringArray = elm.split(' to ');
+            let i = 0;
+            while (i < stringArray.length) {
+              numberArray.push(parseFloat(stringArray[i]));
+              i += 1;
+            }
+            const minimum = Math.min(...numberArray);
+            const maximum = Math.max(...numberArray);
+            filteredRangeList = column.list?.filter((el: number) => el >= minimum && el <= maximum);
+          }
+        })
+        this.filterRanges(filteredRangeList, column);
+      }
     }
+
   }
 
   //filter for search type
-  applyFilterForSearch(input: any, column: { type: string; field: string; }): void {
+  applyFilterForSearch(input: any, column: Columns): void {
     this.filterDictionary.set(column.field, input?.value);
-    this.setDataFilter();
+    this.setDataFilter(column);
   }
 
   //apply filter for date type
-  applyFilterForDate(input: any, column: { type: string; field: string; }): void {
+  applyFilterForDate(input: any, column: Columns): void {
     this.filterDictionary.set(column.field, input?.value);
-    this.setDataFilter();
+    this.setDataFilter(column);
   }
-  
+
   // filter columns
-  updateColumns(cd: any): void {
+  updateColumns(cd: string): void {
     this.columnDef.forEach(elm => {
       if (elm.header == cd) {
         if (elm.selected == undefined && elm.selected == null) {
@@ -259,8 +229,8 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   //filter for range type
-  filterRanges(list: any[], column: { type: any; list?: any; options: any; field: any; steps?: any; symbol?: string; }): void {
-    let filtered: any[] = [];
+  filterRanges(list: any[], column: Columns): void {
+    let filtered: string[] = [];
     for (let x of list) {
       if (column.symbol == '%') {
         filtered.push(`${x}${column.symbol}`);
@@ -269,17 +239,24 @@ export class AgTableComponent implements OnInit, AfterViewInit {
       }
     }
     this.filterDictionary.set(column.field, filtered.join(','));
-    this.setDataFilter();
+    this.setDataFilter(column);
   }
 
   //filter for select type
-  filterSelected(list: any[], column: { type: any; list?: any; options: any; field: any; steps?: any; symbol?: string }): void {
-    this.filterDictionary.set(column.field, list.join(','));
-    this.setDataFilter();
+  filterSelected(list: any[], column: Columns): void {
+    this.filterDictionary.set(column.field, list.join(','),);
+    this.setDataFilter(column);
   }
 
   //to set filters of data
-  setDataFilter(): void {
+  setDataFilter(column: Columns): void {
+    this.allFilters = Array.from(this.filterDictionary.entries()).map(entry => {
+      return {
+        column: entry[0],
+        filters: entry[1].split(','),
+        type: column.type
+      }
+    })
     var jsonStr = JSON.stringify(Array.from(this.filterDictionary.entries()));
     this.data.filter = jsonStr;
   }
@@ -292,14 +269,52 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this.data.filter = '';
     this.columnDef.forEach(elm => {
       elm.selected = true;
-      this.columnsForm.patchValue({[elm.header]: true});
+      this.columnsForm.patchValue({ [elm.header]: true });
     });
-    console.log(this.columnDef)
-    this.displayedColumns = this.columnDef.map(col => col.header);      
+    this.displayedColumns = this.columnDef.map(col => col.header);
   }
 
-  // updateChecks
-  updateChecksOfDropdownsList() {
+  onDateChange(event: { value: string | number | Date; }, action: string, column: Columns) {
+    let startDate: string | number | null;
+    let endDate: string | number | null;
+    if (action === 'start') {
+      startDate = this.pipe.transform(new Date(event.value), 'yyyy/MM/dd');
+      this.datesColumns.forEach((el: any) => {
+        if (el[column.header]) {
+          el[column.header].start = startDate;
+        }
+      })
+    } else if (action === 'end') {
+      endDate = this.pipe.transform(new Date(event.value), 'yyyy/MM/dd');
+      this.datesColumns.forEach((el: any) => {
+        if (el[column.header]) {
+          el[column.header].end = endDate;
+        }
+      })
+    }
 
+    console.log(this.datesColumns)
+    this.datesColumns.forEach(col => {
+      let index = this.datesColumns.indexOf(col);
+      console.log(col[column.header])
+      if (col[column.header] && col[column.header]?.start && col[column.header]?.end) {
+        const list = column.options.filter((el: string) => {
+          if (el) {
+            return el >= col[column.header].start && el <= col[column.header].end;
+          } else {
+            return false;
+          }
+        })
+
+        console.log(list)
+        this.filterDictionary.set(column.field, list.join(','));
+        this.setDataFilter(column);
+      }
+    })
+  }
+
+  getFilters() {
+    this.getAllFilters.emit(this.allFilters);
+    console.log(this.allFilters)
   }
 }

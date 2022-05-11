@@ -6,6 +6,7 @@
       {{col.header}}</mat-checkbox>
   </form>
   <button mat-raised-button (click)="resetFilters()">Reset Filters</button>
+  <button mat-raised-button (click)="getFilters()">Get Filters</button>
 
   <!-- <div class="example-header"> -->
   <!-- <mat-form-field>
@@ -38,54 +39,36 @@
             <mat-label>{{ column.header }}</mat-label>
             <mat-select #matRef1 *ngIf="columnTypeService.isSelect(column)" multiple
               (selectionChange)="applyFilter($event,column)">
-              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val" (click)="toggleCheckBox(column.listWithChecks, matRef1, option)">
+              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val"
+                (click)="toggleCheckBox(column.listWithChecks, matRef1, option)">
                 {{ option.val }}
               </mat-option>
             </mat-select>
+
             <mat-select #matRef *ngIf="columnTypeService.isRange(column)" multiple
               (selectionChange)="applyFilter($event,column)">
-              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val" (click)="toggleCheckBox(column.listWithChecks, matRef, option)">
+              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val"
+                (click)="toggleCheckBox(column.listWithChecks, matRef, option)">
                 {{ option.val }}
               </mat-option>
             </mat-select>
-            <div *ngIf="columnTypeService.isDate(column)" class="date-block__list" [formGroup]="dateForm">
-              <!-- <mat-form-field appearance="fill"> -->
-                <!-- <mat-label>Enter a date range</mat-label> -->
-                <!-- <mat-date-range-input [rangePicker]="picker" [formGroup]="dateForm"> -->
-                  <!-- <input matStartDate formControlName="start" placeholder="Start date"> -->
-                  <!-- <input matEndDate formControlName="end" placeholder="End date"> -->
-                <!-- </mat-date-range-input> -->
-                <!-- <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint> -->
-                <!-- <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle> -->
-                <!-- <mat-date-range-picker #picker></mat-date-range-picker> -->
-                <!-- <div class="date-block__list"> -->
-                  <!-- <mat-form-field> -->
-                    <input matInput 
-                      [matDatepicker]="start" 
-                      placeholder="From Date" 
-                      formControlName="start" (change)="applyFilterForDate($event,column)">
-                    <mat-datepicker-toggle matSuffix [for]="start"></mat-datepicker-toggle>
-                    <mat-datepicker #start></mat-datepicker>
-                  <!-- </mat-form-field> -->
-                <!-- </div> -->
-                  <!-- <div class="date-block__list"> -->
-                  <!-- <mat-form-field> -->
-                    <input matInput 
-                      [matDatepicker]="end" 
-                      placeholder="To Date" 
-                      formControlName="end" (change)="applyFilterForDate($event,column)">
-                    <mat-datepicker-toggle matSuffix [for]="end"></mat-datepicker-toggle>
-                    <mat-datepicker #end></mat-datepicker>
-                  <!-- </mat-form-field> -->
-                <!-- </div> -->
-              
-            </div>
-            <!-- <mat-select *ngIf="column.type == 'search'" [(value)]="column.defaultValue"
-            (selectionChange)="applyFilter($event,column)">
-            <mat-option *ngFor="let option of column.options" [value]="option">
-              {{ option }}
-            </mat-option>
-          </mat-select> -->
+            <!-- <form  class="date-block"> -->
+              <div *ngIf="columnTypeService.isDate(column)" class="start-date-picker">
+                <input matInput [matDatepicker]="start" (dateChange)="onDateChange($event, 'start', column)" placeholder="From Date">
+                <mat-datepicker-toggle matSuffix [for]="start"></mat-datepicker-toggle>
+                <mat-datepicker #start></mat-datepicker>
+                </div>
+                <div *ngIf="columnTypeService.isDate(column)" class="end-date-picker">
+                <input matInput [matDatepicker]="end" (dateChange)="onDateChange($event, 'end', column)" placeholder="To Date">
+                <mat-datepicker-toggle matSuffix [for]="end"></mat-datepicker-toggle>
+                <mat-datepicker #end></mat-datepicker>                
+              </div>
+<!-- 
+              <button mat-button color="primary" class="primary"
+                (click)="getDateRange(dateForm.value,column)">Submit</button> -->
+
+            <!-- </form> -->
+
             <input matInput *ngIf="columnTypeService.isSearch(column)"
               (keyup)="applyFilterForSearch($event.target,column)" placeholder="Search">
           </mat-form-field>

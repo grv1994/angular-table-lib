@@ -41,3 +41,9 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
 .choose-columns-btn{
     margin: 10px 10px 0px 20px;
 }
+
+.startdatepicker, .enddatepicker{
+    display: flex;
+    flex-direction: row;
+}
+

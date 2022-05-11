@@ -59,7 +59,7 @@ export class AgTableService {
   getDropdownListForSelect(dataSource: any[],col: { field: any; header?: string; selected?: boolean | undefined; type: any; steps?: string | undefined; symbol?: string | undefined; }):void {
     dataSource.forEach(el => {
       if (this.list.length) {
-          if (col.type == Constants.SELECT || col.type == Constants.SEARCH) {
+          if (col.type == Constants.SELECT || col.type == Constants.SEARCH || col.type == Constants.DATE) {
             if (!this.list.find((item: { val: any; }) => item.val == el[col.field])) {
             this.list.push({val: el[col.field],selected: false});
           }
@@ -76,7 +76,7 @@ export class AgTableService {
           }
         
       } else {
-        if (col.type == Constants.SELECT || col.type == Constants.SEARCH) {
+        if (col.type == Constants.SELECT || col.type == Constants.SEARCH || col.type == Constants.DATE) {
           this.list.push({val: el[col.field],selected: false});
         }
         if (col.type == Constants.RANGE) {
