@@ -84,11 +84,6 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this.onGridReady.emit(this);
   }
 
-  // applyFilter(target:any) {
-  //   console.log(target.value)
-  //   this.data.filter = target.value?.trim()?.toLowerCase();
-  // }
-
   applyFilter(ob: { value: any; }, column: Columns): void {
     if (ob.value.length) {
       // column type == select
@@ -113,11 +108,18 @@ export class AgTableComponent implements OnInit, AfterViewInit {
 
   toggleCheckBox(column: { val: string, selected: boolean }[], field: MatSelect, value: { selected: boolean; val: string; }) {
     value.selected = !value.selected;
-    if (value.val == 'All' && value.selected) {
-      column = column.map(col => { col.selected = true; return col });
-      field.options.forEach((item: MatOption) => {
-        item.select();
-      });
+    if (value.val == 'All') {
+      if (value.selected) {
+        column = column.map(col => { col.selected = true; return col });
+        field.options.forEach((item: MatOption) => {
+          item.select();
+        });
+      } else if (!value.selected) {
+        column = column.map(col => { col.selected = false; return col });
+        field.options.forEach((item: MatOption) => {
+          item.deselect();
+        });
+      }
     } else {
       if (value.selected) {
         const allSelected = column.filter(col => col.val !== 'All' && col.selected).length === column.length - 1;
@@ -153,7 +155,6 @@ export class AgTableComponent implements OnInit, AfterViewInit {
           }
         }
       })
-
       this.filterSelected(filteredSelectList, column);
     }
   }
@@ -264,7 +265,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   //reset filters
   resetFilters(): void {
     this.matReference.forEach(matselect => {
-      matselect.options.forEach((data: MatOption) => data.select())
+      matselect.options.forEach((data: MatOption) => data.deselect())
     });
     this.data.filter = '';
     this.columnDef.forEach(elm => {
@@ -292,11 +293,9 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         }
       })
     }
-
-    console.log(this.datesColumns)
+    // console.log(this.datesColumns)
     this.datesColumns.forEach(col => {
-      let index = this.datesColumns.indexOf(col);
-      console.log(col[column.header])
+      // console.log(col[column.header])
       if (col[column.header] && col[column.header]?.start && col[column.header]?.end) {
         const list = column.options.filter((el: string) => {
           if (el) {
@@ -305,8 +304,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
             return false;
           }
         })
-
-        console.log(list)
+        // console.log(list)
         this.filterDictionary.set(column.field, list.join(','));
         this.setDataFilter(column);
       }

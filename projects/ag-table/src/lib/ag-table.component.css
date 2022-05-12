@@ -1,6 +1,15 @@
-th,td{
+th{
     max-width: 300px;
-    min-width:200px;
+    min-width: 200px;
+}
+
+td{
+    max-width: 300px;
+    min-width: 200px;
+}
+
+.dateClass{
+    min-width: 219px !important;
 }
 
 th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:first-of-type {
@@ -23,7 +32,7 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
     border-bottom-width: 0px !important;
 }
 
-.choose-columns{
+.chooseColumns{
     display: flex;
     flex-direction: column;
     z-index: 1;
@@ -38,12 +47,22 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
     padding: 20px;
 }
 
-.choose-columns-btn{
-    margin: 10px 10px 0px 20px;
+.chooseColumnsBtn, .resetBtn{
+    margin-right: 10px;
 }
 
-.startdatepicker, .enddatepicker{
+.datePicker{
     display: flex;
     flex-direction: row;
 }
 
+.btns{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    margin: 10px 0px 10px 20px;
+}
+
+::ng-deep .mat-form-field-appearance-fill .mat-form-field-flex {
+    height: 60px !important;
+}
