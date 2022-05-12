@@ -12,6 +12,8 @@ import { Columns } from './types/columns-data.type';
 import { DataSource } from './types/data-source.type';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
+import { MatInput } from '@angular/material/input';
+import { MatDateRangePicker } from '@angular/material/datepicker';
 export type filterType = {
   column: string,
   filters: string[]
@@ -32,7 +34,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   paginator!: MatPaginator;
   @ViewChild(MatSort)
   sort!: MatSort;
-  @ViewChildren(MatSelect) matReference!: QueryList<MatSelect>
+  @ViewChildren(MatSelect) matReference!: QueryList<MatSelect>;
   displayedColumns: string[] = this.columnDef.map(c => c.header)
   data = new MatTableDataSource(this.dataSource);
   filterDictionary = new Map<string, string>();
@@ -45,10 +47,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   allFilters: { column: string; filters: string[]; type: any; }[] | undefined;
   startDate: string | null | undefined;
   endDate: string | null | undefined;
-  // datesForm : FormGroup = new FormGroup({
-    // start: new FormControl(''),
-    // end: new FormControl('')
-  // });
+  datesForm: FormGroup = new FormGroup({});
 
   constructor(private _decimalPipe: DecimalPipe, public columnTypeService: ColumnTypeService, public agTableService: AgTableService) { }
 
@@ -62,19 +61,26 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     let datesHeaders = this.columnDef.filter(c => this.columnTypeService.isDate(c)).map(c => c.header);
     for (let header of datesHeaders) {
       this.datesColumns.push({ [header]: { start: this.startDate, end: this.endDate } });
-      // this.datesForm.addControl(header,new FormControl({ start: this.startDate, end: this.endDate }))
+      this.datesForm.addControl(`start${header}`, new FormControl(this.startDate));
+      this.datesForm.addControl(`end${header}`, new FormControl(this.endDate));
     }
     this.data = new MatTableDataSource(this.dataSource);
     this.data.filterPredicate = (record: DataSource, filter: any) => {
       // console.log(filter)
       var map = new Map(JSON.parse(filter));
       let isMatch = false;
+      let include = false;
       for (let [key, value] of map) {
-        let val = typeof (value) == 'string' ? value.split(',') : [];
+        let values = typeof (value) == 'string' ? value.split(',') : [];
         let isMatchForRange = [];
-        for (let x of val) {
-          let includes = record[key as keyof DataSource].split(',').includes(x)
-          isMatchForRange.push(x == 'All' || includes);
+        for (let x of values) {
+          record[key as keyof DataSource].split(',').forEach((el:any) => {
+          if(el.includes(x)){
+            include = true;
+          }
+        })
+          let includes = record[key as keyof DataSource].split(',').includes(x);     
+          isMatchForRange.push(x == 'All' || includes || include);
         }
         isMatch = isMatchForRange.includes(true);
         if (!isMatchForRange.includes(true)) return false;
@@ -196,7 +202,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
             let i = 0;
             while (i < stringArray.length) {
               numberArray.push(parseFloat(stringArray[i]));
-              i += 1;
+              i = 1;
             }
             const minimum = Math.min(...numberArray);
             const maximum = Math.max(...numberArray);
@@ -211,10 +217,10 @@ export class AgTableComponent implements OnInit, AfterViewInit {
 
   //filter for search type
   applyFilterForSearch(input: any, column: Columns): void {
-    if(input.value == ''){
+    if (input.value == '') {
       this.filterDictionary.set(column.field, column.options.toString());
       this.setDataFilter(column);
-    }else{
+    } else {
       this.filterDictionary.set(column.field, input?.value);
       this.setDataFilter(column);
     }
@@ -283,11 +289,15 @@ export class AgTableComponent implements OnInit, AfterViewInit {
       this.columnsForm.patchValue({ [elm.header]: true });
     });
     this.displayedColumns = this.columnDef.map(col => col.header);
-    this.datesColumns.forEach(el => {
-      for(let x in el){
-         el[x].start = '';
-         el[x].end = ''
+    this.datesForm.reset();
+    this.datesColumns.forEach((el: any) => {
+      for(let header in el){
+      if (el[header]) {
+        el[header].end = null;
+         el[header].start = null;
       }
+      }
+
     })
   }
 
@@ -299,6 +309,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
       this.datesColumns.forEach((el: any) => {
         if (el[column.header]) {
           el[column.header].start = startDate;
+          this.datesForm.get(`start${[column.header]}`)?.setValue(new Date(event.value));
         }
       })
     } else if (action === 'end') {
@@ -306,14 +317,14 @@ export class AgTableComponent implements OnInit, AfterViewInit {
       this.datesColumns.forEach((el: any) => {
         if (el[column.header]) {
           el[column.header].end = endDate;
+          this.datesForm.get(`end${[column.header]}`)?.setValue(new Date(event.value));
         }
       })
     }
-    // console.log(this.datesColumns)
     this.datesColumns.forEach(col => {
-      // console.log(col[column.header])
+      console.log(col[column.header])
       if (col[column.header] && col[column.header]?.start && col[column.header]?.end) {
-        // this.datesForm.get([column.header])?.setValue({start: col[column.header]?.start,end: col[column.header]?.end});
+        console.log(this.datesForm)
         const list = column.options.filter((el: string) => {
           if (el) {
             return el >= col[column.header].start && el <= col[column.header].end;
@@ -328,6 +339,22 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     })
   }
 
+  clearDate(event: { stopPropagation: () => void; }, column: Columns) {
+    // event.stopPropagation();
+    this.datesForm.get(`start${[column.header]}`)?.setValue(null);
+    this.datesForm.get(`end${[column.header]}`)?.setValue(null);
+    this.datesColumns.forEach((el: any) => {
+      if (el[column.header]) {
+        el[column.header].end = null;
+         el[column.header].start = null;
+      }
+    })
+    console.log(this.datesForm)
+    this.filterDictionary.set(column.field, column.options.toString());
+    this.setDataFilter(column);
+  }
+
+  //getFilters
   getFilters() {
     this.getAllFilters.emit(this.allFilters);
     console.log(this.allFilters)

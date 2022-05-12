@@ -32,17 +32,17 @@
                 {{ option.val }}
               </mat-option>
             </mat-select>
-            <!-- <form *ngIf="columnTypeService.isDate(column)"> -->
+            <form *ngIf="columnTypeService.isDate(column)" [formGroup]="datesForm">
               <div *ngIf="columnTypeService.isDate(column)" class="datePicker" [ngClass]="'dateClass'">
                 <mat-date-range-input [rangePicker]="picker">
-                  <input matStartDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'start', column)">
-                  <input matEndDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'end', column)">
+                  <input matStartDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'start', column)" [formControlName]="'start'+column.header">
+                  <input matEndDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'end', column)" [formControlName]="'end'+column.header">
                 </mat-date-range-input>
+                <mat-icon matDatepickerToggleIcon (click)="clearDate($event,column)">clear</mat-icon>
                 <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                 <mat-date-range-picker #picker></mat-date-range-picker>
               </div>
-            <!-- </form> -->
-
+            </form>
 
             <input matInput *ngIf="columnTypeService.isSearch(column)"
               (keyup)="applyFilterForSearch($event.target,column)" placeholder="Search">
