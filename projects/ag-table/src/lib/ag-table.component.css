@@ -1,15 +1,17 @@
 th{
     max-width: 300px;
     min-width: 200px;
+    margin-right: 20px;
 }
 
 td{
     max-width: 300px;
     min-width: 200px;
+    margin-right: 20px;
 }
 
 .dateClass{
-    min-width: 219px !important;
+    min-width: 220px !important;
 }
 
 th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:first-of-type {
@@ -24,7 +26,7 @@ th.mat-header-cell:first-of-type, td.mat-cell:first-of-type, td.mat-footer-cell:
     width: 100%;
 }
 
-mat-header-row, mat-footer-row {
+mat-row, mat-header-row, mat-footer-row {
     border-bottom-width: 0px !important;
 }
 
@@ -65,4 +67,10 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
 
 ::ng-deep .mat-form-field-appearance-fill .mat-form-field-flex {
     height: 60px !important;
+    border-radius: 0px !important;
+    background-color: transparent !important;
+}
+
+::ng-deep .mat-form-field-appearance-fill .mat-form-field-underline{
+    width: 0px !important;
 }

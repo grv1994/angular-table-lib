@@ -13,7 +13,7 @@
   <div class="table-container mat-elevation-z8" (mouseover)="showColumns = false">
     <mat-table [dataSource]="data" matSort>
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.header">
-        <th class="header" mat-header-cell *matHeaderCellDef
+        <th class="header" mat-header-cell *matHeaderCellDef mat-sort-header
           [ngClass]="columnTypeService.isDate(column)?'dateClass':''">
           <mat-form-field appearance="fill">
             <mat-label>{{ column.header }}</mat-label>
@@ -32,14 +32,17 @@
                 {{ option.val }}
               </mat-option>
             </mat-select>
-            <div *ngIf="columnTypeService.isDate(column)" class="datePicker" [ngClass]="'dateClass'">
-              <mat-date-range-input [rangePicker]="picker">
-                <input matStartDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'start', column)">
-                <input matEndDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'end', column)">
-              </mat-date-range-input>
-              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-date-range-picker #picker></mat-date-range-picker>
-            </div>
+            <form *ngIf="columnTypeService.isDate(column)" [formGroup]="datesForm">
+              <div *ngIf="columnTypeService.isDate(column)" class="datePicker" [ngClass]="'dateClass'">
+                <mat-date-range-input [rangePicker]="picker">
+                  <input matStartDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'start', column)">
+                  <input matEndDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'end', column)">
+                </mat-date-range-input>
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-date-range-picker #picker></mat-date-range-picker>
+              </div>
+            </form>
+
 
             <input matInput *ngIf="columnTypeService.isSearch(column)"
               (keyup)="applyFilterForSearch($event.target,column)" placeholder="Search">
