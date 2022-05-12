@@ -45,10 +45,10 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   allFilters: { column: string; filters: string[]; type: any; }[] | undefined;
   startDate: string | null | undefined;
   endDate: string | null | undefined;
-  datesForm : FormGroup = new FormGroup({
+  // datesForm : FormGroup = new FormGroup({
     // start: new FormControl(''),
     // end: new FormControl('')
-  });
+  // });
 
   constructor(private _decimalPipe: DecimalPipe, public columnTypeService: ColumnTypeService, public agTableService: AgTableService) { }
 
@@ -62,7 +62,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     let datesHeaders = this.columnDef.filter(c => this.columnTypeService.isDate(c)).map(c => c.header);
     for (let header of datesHeaders) {
       this.datesColumns.push({ [header]: { start: this.startDate, end: this.endDate } });
-      this.datesForm.addControl(header,new FormControl({ start: this.startDate, end: this.endDate }))
+      // this.datesForm.addControl(header,new FormControl({ start: this.startDate, end: this.endDate }))
     }
     this.data = new MatTableDataSource(this.dataSource);
     this.data.filterPredicate = (record: DataSource, filter: any) => {
@@ -211,8 +211,13 @@ export class AgTableComponent implements OnInit, AfterViewInit {
 
   //filter for search type
   applyFilterForSearch(input: any, column: Columns): void {
-    this.filterDictionary.set(column.field, input?.value);
-    this.setDataFilter(column);
+    if(input.value == ''){
+      this.filterDictionary.set(column.field, column.options.toString());
+      this.setDataFilter(column);
+    }else{
+      this.filterDictionary.set(column.field, input?.value);
+      this.setDataFilter(column);
+    }
   }
 
   //apply filter for date type
@@ -278,7 +283,12 @@ export class AgTableComponent implements OnInit, AfterViewInit {
       this.columnsForm.patchValue({ [elm.header]: true });
     });
     this.displayedColumns = this.columnDef.map(col => col.header);
-    this.datesForm.reset()
+    this.datesColumns.forEach(el => {
+      for(let x in el){
+         el[x].start = '';
+         el[x].end = ''
+      }
+    })
   }
 
   onDateChange(event: { value: string | number | Date; }, action: string, column: Columns) {
@@ -303,6 +313,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this.datesColumns.forEach(col => {
       // console.log(col[column.header])
       if (col[column.header] && col[column.header]?.start && col[column.header]?.end) {
+        // this.datesForm.get([column.header])?.setValue({start: col[column.header]?.start,end: col[column.header]?.end});
         const list = column.options.filter((el: string) => {
           if (el) {
             return el >= col[column.header].start && el <= col[column.header].end;

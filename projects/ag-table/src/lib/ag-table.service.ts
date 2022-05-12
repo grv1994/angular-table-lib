@@ -43,7 +43,9 @@ export class AgTableService {
           defaultValue: this.defaultValue
         })
       } else {
-        this.list.push({val: 'All',selected: false});
+        if(col.type == Constants.SELECT){
+          this.list.push({val: 'All',selected: false});
+        }
         this.columns.push({
           field: col.field,
           header: col.header,
