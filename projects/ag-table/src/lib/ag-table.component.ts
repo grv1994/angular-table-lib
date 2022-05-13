@@ -66,7 +66,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     }
     this.data = new MatTableDataSource(this.dataSource);
     this.data.filterPredicate = (record: DataSource, filter: any) => {
-      // console.log(filter)
+      console.log(filter)
       var map = new Map(JSON.parse(filter));
       let isMatch = false;
       let include = false;
@@ -80,7 +80,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
           }
         })
           let includes = record[key as keyof DataSource].split(',').includes(x);     
-          isMatchForRange.push(x == 'All' || includes || include);
+          isMatchForRange.push(x == 'All' || includes);
         }
         isMatch = isMatchForRange.includes(true);
         if (!isMatchForRange.includes(true)) return false;
@@ -212,7 +212,6 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         this.filterRanges(filteredRangeList, column);
       }
     }
-
   }
 
   //filter for search type
@@ -267,6 +266,8 @@ export class AgTableComponent implements OnInit, AfterViewInit {
 
   //to set filters of data
   setDataFilter(column: Columns): void {
+    var jsonStr = JSON.stringify(Array.from(this.filterDictionary.entries()));
+    this.data.filter = jsonStr;
     this.allFilters = Array.from(this.filterDictionary.entries()).map(entry => {
       return {
         column: entry[0],
@@ -274,8 +275,6 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         type: column.type
       }
     })
-    var jsonStr = JSON.stringify(Array.from(this.filterDictionary.entries()));
-    this.data.filter = jsonStr;
   }
 
   //reset filters
