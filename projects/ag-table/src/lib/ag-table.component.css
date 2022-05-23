@@ -74,3 +74,22 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
 ::ng-deep .mat-form-field-appearance-fill .mat-form-field-underline{
     width: 0px !important;
 }
+
+.rangeForm{
+    position: absolute;
+    background-color: gainsboro;
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+    top: 33px;
+}
+
+.rangeForm > input{
+    background-color: white;
+    margin: 1px;
+}
+
+.rangeForm > button{
+    font-size: 12px;
+    font-weight: 700;
+}

@@ -14,41 +14,65 @@
     <mat-table [dataSource]="data" matSort>
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.header">
         <th class="header" mat-header-cell *matHeaderCellDef mat-sort-header
-          [ngClass]="columnTypeService.isDate(column)?'dateClass':''">
-          <mat-form-field appearance="fill">
+          [ngClass]="_columnTypeService.isDate(column)?'dateClass':''">
+          <mat-form-field appearance="fill" (click)=stop($event)>
             <mat-label>{{ column.header }}</mat-label>
-            <mat-select #matRef1 *ngIf="columnTypeService.isSelect(column)" multiple
+
+            <mat-select #matRef1 *ngIf="_columnTypeService.isSelect(column)" multiple
               (selectionChange)="applyFilter($event,column)">
-              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val"
-                (click)="toggleCheckBox(column.listWithChecks, matRef1, option)">
+              <br>
+              <input matInput *ngIf="_columnTypeService.isSelect(column)" placeholder="Search"
+              (keyup)="filterSearchedinSelectList($event.target,column)" autocomplete="off"/>
+              <br>
+              <mat-option *ngFor="let option of column.filteredList" [value]="option.val"
+                (click)="toggleCheckBox(column.options, matRef1, option)">
                 {{ option.val }}
               </mat-option>
             </mat-select>
 
-            <mat-select #matRef *ngIf="columnTypeService.isRange(column)" multiple
+            <mat-select #matRef *ngIf="_columnTypeService.isRange(column)" multiple
               (selectionChange)="applyFilter($event,column)">
-              <mat-option *ngFor="let option of column.listWithChecks" [value]="option.val"
-                (click)="toggleCheckBox(column.listWithChecks, matRef, option)">
+              <mat-option *ngFor="let option of column.filteredList" [value]="option.val"
+                (click)="toggleCheckBox(column.filteredList, matRef, option)">
                 {{ option.val }}
               </mat-option>
             </mat-select>
-            <form *ngIf="columnTypeService.isDate(column)" [formGroup]="datesForm">
-              <div *ngIf="columnTypeService.isDate(column)" class="datePicker" [ngClass]="'dateClass'">
+            <form *ngIf="_columnTypeService.isDate(column)" [formGroup]="datesForm">
+              <div *ngIf="_columnTypeService.isDate(column)" class="datePicker" [ngClass]="'dateClass'">
                 <mat-date-range-input [rangePicker]="picker">
-                  <input matStartDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'start', column)" [formControlName]="'start'+column.header">
-                  <input matEndDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'end', column)" [formControlName]="'end'+column.header">
+                  <input matStartDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'start', column)"
+                    [formControlName]="'start'+column.header" />
+                  <input matEndDate placeholder="MM/DD/YYYY" (dateChange)="onDateChange($event, 'end', column)"
+                    [formControlName]="'end'+column.header" />
                 </mat-date-range-input>
                 <mat-icon matDatepickerToggleIcon (click)="clearDate($event,column)">clear</mat-icon>
                 <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
                 <mat-date-range-picker #picker></mat-date-range-picker>
               </div>
             </form>
-
-            <input matInput *ngIf="columnTypeService.isSearch(column)"
-              (keyup)="applyFilterForSearch($event.target,column)" placeholder="Search">
+            <div *ngIf="_columnTypeService.isSearch(column)">
+              <input matInput placeholder="Search" [matAutocomplete]="auto"
+                (keyup)="filterSearchList($event.target,column)" />
+              <mat-autocomplete #auto="matAutocomplete">
+                <mat-option *ngFor="let option of column.filteredOptions?column.filteredOptions:column.options"
+                  [value]="option.val" (click)="applyFilterForSearch(option.val,column)">
+                  {{option.val}}
+                </mat-option>
+              </mat-autocomplete>
+            </div>
+            <!-- <button mat-raised-button *ngIf="_columnTypeService.isRange(column) && !_agTableService.showDropdownFormForRange"
+          (click)="_agTableService.showDropdownForm()">Create dropdown</button> -->
           </mat-form-field>
+
+          <form class="rangeForm" *ngIf="_columnTypeService.isRange(column)" [formGroup]="rangesForm" (click)="stop($event)">
+            <input matInput placeholder="Min" [formControlName]="'min'+column.header" required autocomplete="off"/>
+            <input matInput placeholder="Max" [formControlName]="'max'+column.header" required autocomplete="off"/>
+            <input matInput placeholder="Steps" [formControlName]="'steps'+column.header" required autocomplete="off"/>
+            <button mat-raised-button
+              (click)="_agTableService.getCustomDropdownListForRange(column,rangesForm.value)">Submit</button>
+          </form>
         </th>
-        <td mat-cell *matCellDef="let row" [ngClass]="columnTypeService.isDate(column)?'dateClass':''">
+        <td mat-cell *matCellDef="let row" [ngClass]="_columnTypeService.isDate(column)?'dateClass':''">
           {{row[column.header]}}</td>
       </ng-container>
 
@@ -60,3 +84,4 @@
     <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]"></mat-paginator>
   </div>
 </div>
+

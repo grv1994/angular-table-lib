@@ -4,11 +4,12 @@ export type Columns = {
     field: string;
     header: string;
     type: ColumnType;
-    steps?: string;
+    stepsInfo?: {max:string,min:string,steps:string};
     symbol?: string;
     options: any[];
     defaultValue: string;
-    list?: any[]
-    listWithChecks: { val: any , selected: boolean}[]
+    list?: any[];
+    filteredList: { val: any , selected: boolean}[];
+    filteredOptions?: any[];
 }
 

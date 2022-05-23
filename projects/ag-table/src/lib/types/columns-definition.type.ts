@@ -5,7 +5,7 @@ export type ColumnDefinition = {
     header: string;
     selected?: boolean;
     type: ColumnType;
-    steps?: string;
+    stepsInfo?: {max:string,min:string,steps:string};
     symbol?: string;
 }
 
