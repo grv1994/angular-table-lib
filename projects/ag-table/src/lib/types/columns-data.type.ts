@@ -9,7 +9,8 @@ export type Columns = {
     options: any[];
     defaultValue: string;
     list?: any[];
-    filteredList: { val: any , selected: boolean}[];
+    filteredList: any[];
     filteredOptions?: any[];
+    haveSpaceForSymbol?:boolean;
 }
 

@@ -1,2 +1,51 @@
 <lib-ag-table [dataSource]="dataSource" [columnDef]="columnDef" (onGridReady)="onGridReady($event)"></lib-ag-table>
 <!-- <lib-ag-table (onGridReady)="onGridReady($event)" [data]="data" [columnDefs]="columnDefs"></lib-ag-table> -->
+
+<!-- <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#ModalLoginForm">
+    Add New Row
+  </button>
+  
+  <div id="ModalLoginForm" class="modal fade">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title">Add New Data</h1>
+        </div>
+        <div class="modal-body">
+          <form class="newDataForm" [formGroup]="newDataForm">
+            <label>Good To Trade</label>
+            <input type="text" matInput name="GoodToTrade" class="form-control" formControlName="GoodToTrade" [(ngModel)]="GoodToTrade" autocomplete="off">
+            <label>Counterparty</label>
+            <input type="text" matInput name="Counterparty" class="form-control" formControlName="Counterparty" [(ngModel)]="Counterparty" autocomplete="off">
+            <label>Repo Type</label>
+            <input type="text" matInput name="RepoType" class="form-control" formControlName="RepoType" [(ngModel)]="RepoType" autocomplete="off">
+            <label>Side</label>
+            <input type="text" matInput name="Side" class="form-control" formControlName="Side" [(ngModel)]="Side" autocomplete="off">
+            <label>Available Cash Settlement Amount</label>
+            <input type="text" matInput name="AvailableCashSettlementAmount" class="form-control" formControlName="AvailableCashSettlementAmount" [(ngModel)]="AvailableCashSettlementAmount" autocomplete="off">
+            <label>Cash Settlement Currency</label>
+            <input type="text" matInput name="CashSettlementCurrency" class="form-control" formControlName="CashSettlementCurrency" [(ngModel)]="CashSettlementCurrency" autocomplete="off">
+            <label>Rate/Spread Over Benchmark</label>
+            <input type="text" matInput name="RateSpreadOverBenchmark" class="form-control" formControlName="RateSpreadOverBenchmark" [(ngModel)]="RateSpreadOverBenchmark" autocomplete="off">
+            <label>Floating</label>
+            <input type="text" matInput name="Floating" class="form-control" formControlName="Floating" [(ngModel)]="Floating" autocomplete="off"> 
+            <label>Purchasing Date</label>
+            <input type="text" matInput name="PurchasingDate" class="form-control" formControlName="PurchasingDate" [(ngModel)]="PurchasingDate" autocomplete="off">
+            <label>Repurchase Date</label>
+            <input type="text" matInput name="RepurchaseDate" class="form-control" formControlName="RepurchaseDate" [(ngModel)]="RepurchaseDate" autocomplete="off"> 
+            <label>Repo Term Type</label>
+            <input type="text" matInput name="RepoTermType" class="form-control" formControlName="RepoTermType" [(ngModel)]="RepoTermType" autocomplete="off">
+            <label>Market Sector</label>
+            <input type="text" matInput name="MarketSector" class="form-control" formControlName="MarketSector" [(ngModel)]="MarketSector" autocomplete="off">
+            <label>Issuer Domicile</label>
+            <input type="text" matInput name="IssuerDomicile" class="form-control" formControlName="IssuerDomicile" [(ngModel)]="IssuerDomicile" autocomplete="off">
+            <label>Quality</label>
+            <input type="text" matInput name="Quality" class="form-control" formControlName="Quality" [(ngModel)]="Quality" autocomplete="off">
+            <label>Collaterals</label>
+            <input type="text" matInput name="Collaterals" class="form-control" formControlName="Collaterals" [(ngModel)]="Collaterals" autocomplete="off">
+            <button type="submit" class="btn btn-success" (click)="addRow(newDataForm.value)">Add Row</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div> -->

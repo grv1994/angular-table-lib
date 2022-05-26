@@ -76,12 +76,10 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
 }
 
 .rangeForm{
-    position: absolute;
     background-color: gainsboro;
     display: flex;
     flex-direction: row;
     padding: 10px;
-    top: 33px;
 }
 
 .rangeForm > input{
@@ -92,4 +90,14 @@ th.mat-header-cell, td.mat-cell, td.mat-footer-cell {
 .rangeForm > button{
     font-size: 12px;
     font-weight: 700;
+}
+
+.searchInSelect{
+    padding: 0px 16px 0px 16px;
+    width: auto;
+    height: 4rem;
+}
+
+.rangeFormHint{
+    color: red;
 }
