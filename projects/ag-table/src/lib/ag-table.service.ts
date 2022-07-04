@@ -1,8 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DataInterface } from 'projects/test-table/src/app/interface/data.type';
 import { ColumnDefinition } from '../public-api';
-import { AgTableComponent } from './ag-table.component';
-import { Constants } from './constants/grid.constant';
 import { ColumnTypeService } from './services/column-type.service';
 import { Columns } from './types/columns-data.type';
 
@@ -19,7 +16,7 @@ export class AgTableService {
   haveSpaceForSymbol: boolean = false;
   constructor(public _columnTypeService: ColumnTypeService) { }
 
-  getColumnsData(dataSource: DataInterface[], columnDef: ColumnDefinition[]): void {
+  getColumnsData(dataSource: any[], columnDef: ColumnDefinition[]): void {
     if (this.columns.length) {
       this.columns = [];
     }

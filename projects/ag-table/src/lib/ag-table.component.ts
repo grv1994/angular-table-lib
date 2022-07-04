@@ -2,7 +2,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnIni
 import { MatTableDataSource } from '@angular/material/table';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Constants } from './constants/grid.constant';
 import { ColumnDefinition } from '../public-api';
@@ -19,6 +19,10 @@ export type filterType = {
   filters: string[]
 }
 
+export type GeneratedTablesFilterDictionary = {
+  id: number,
+  filterDictionary: Map<string, string>
+}
 @Component({
   selector: 'lib-ag-table',
   templateUrl: './ag-table.component.html',
@@ -34,33 +38,36 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   paginator!: MatPaginator;
   @ViewChild(MatSort)
   sort!: MatSort;
+  @ViewChildren(MatPaginator) newTablePaginator = new QueryList<MatPaginator>();
+  @ViewChildren(MatSort) newTableSort = new QueryList<MatSort>();
   @ViewChildren(MatSelect) matReference!: QueryList<MatSelect>;
   @ViewChildren(MatInput) matInput!: QueryList<MatInput>;
   displayedColumns: string[] = this.columnDef.map(c => c.header)
   data = new MatTableDataSource(this.dataSource);
   filterDictionary = new Map<string, string>();
+  generatedTablesFilterDictionary:GeneratedTablesFilterDictionary[] = []
   columns: Columns[] = [];
   max: number = 0;
   columnsForm: FormGroup = new FormGroup({});
   pipe: DatePipe = new DatePipe('en-US');
   showColumns: boolean = false;
   datesColumns: { [x: string]: { start: any; end: any; }; }[] = [];
-  allFilters: { column: string; filters: string[]; type: any; }[] | undefined;
+  allFilters: { column: string; filters: string[]; type: any; selectedRanges?: string[]}[] = [];
   startDate: string | null | undefined;
   endDate: string | null | undefined;
   datesForm: FormGroup = new FormGroup({});
   rangesForm: FormGroup = new FormGroup({});
   min: number = 0;
+  tablesDataSource: any[] = [];
+  isLoading: boolean = false;
 
   constructor(
-    private _decimalPipe: DecimalPipe,
     public _columnTypeService: ColumnTypeService,
     public _agTableService: AgTableService
   ) { }
 
   ngOnInit(): void {
     this.prepareTableData();
-    
   }
 
   prepareTableData() {
@@ -90,8 +97,12 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this._agTableService.getColumnsData(this.dataSource, this.columnDef);
     this.columns = this._agTableService.columns;
     this.data = new MatTableDataSource(this.dataSource);
+    this.filterPredicate(this.data);
+    this.ngAfterViewInit();
+  }
 
-    this.data.filterPredicate = (record: DataSource, filter: any) => {
+  filterPredicate(data: MatTableDataSource<DataSource>) {
+    data.filterPredicate = (record: DataSource, filter: any) => {
       var map = new Map(JSON.parse(filter));
       let isMatch = false;
       let include = false;
@@ -112,7 +123,6 @@ export class AgTableComponent implements OnInit, AfterViewInit {
       }
       return isMatch;
     };
-    this.ngAfterViewInit();
   }
 
   // prepareData(): void {
@@ -127,24 +137,40 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     this.onGridReady.emit(this);
   }
   
-  applyFilter(ob: { value: any; }, column: Columns): void {
+  applyFilter(ob: { value: any; }, column: Columns, id?:number): void {
     if (ob.value.length) {
       // column type == select
       if (column.type == Constants.SELECT) {
-        this.handleSelectFilterCase(ob, column);
+        if(id){
+          this.handleSelectFilterCase(ob, column, id);
+        }else{
+          this.handleSelectFilterCase(ob, column);
+        }
       }
       // column type ==  range 
       if (column.type == Constants.RANGE) {
-        this.handleRangeFilterCase(column, ob);
+        if(id){
+          this.handleRangeFilterCase(column, ob, id);
+        }else{
+          this.handleRangeFilterCase(column, ob);
+        }
       }
     }
     else {
       if (column.type == Constants.RANGE) {
         if (column.list) {
-          this.filterRanges(column.list, column);
+          if(id){
+            this.filterRanges(column.list, column, column.options.map(option => option.val), id);
+          }else{
+            this.filterRanges(column.list, column, column.options.map(option => option.val));
+          }
         }
       } else if (column.type == Constants.SELECT) {
-        this.filterSelected(column.options.map(el => el.val), column);
+        if(id){
+          this.filterSelected(column.options.map(el => el.val), column, id);
+        }else{
+          this.filterSelected(column.options.map(el => el.val), column);
+        }
       }
     }
   }
@@ -182,9 +208,13 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   // filtering if its select case
-  handleSelectFilterCase(ob: { value: string[]; }, column: Columns) {
+  handleSelectFilterCase(ob: { value: string[]; }, column: Columns, id?:number) {
     if (ob.value.includes('All')) {
-      this.filterSelected(column.options.map(el => el.val), column);
+      if(id){
+        this.filterSelected(column.options.map(el => el.val), column, id);
+      }else{
+        this.filterSelected(column.options.map(el => el.val), column);
+      }
     } else {
       const filteredSelectList: any[] = [];
       column.options.map(el => el.val).forEach((col: string) => {
@@ -198,12 +228,16 @@ export class AgTableComponent implements OnInit, AfterViewInit {
           }
         }
       })
-      this.filterSelected(filteredSelectList, column);
+      if(id){
+        this.filterSelected(filteredSelectList, column, id);
+      }else{
+        this.filterSelected(filteredSelectList, column);
+      }
     }
   }
 
   //filtering for range case 
-  handleRangeFilterCase(column: Columns, ob: { value: string[]; }) {
+  handleRangeFilterCase(column: Columns, ob: { value: string[]; }, id?: number) {
     if (column.list && column.stepsInfo) {
       if (column.stepsInfo.steps) {
         this.max = parseFloat(column.stepsInfo?.max);
@@ -217,15 +251,27 @@ export class AgTableComponent implements OnInit, AfterViewInit {
             let greater = ob.value.find((elm: string) => elm.includes('Greater'))
             if (greater && !lesser) {
               const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el > Math.round(this.max / 2));
-              this.filterRanges(filteredRangeListForTwoSteps, column);
+              if(id){
+                this.filterRanges(filteredRangeListForTwoSteps, column, ob.value, id);
+              }else{
+                this.filterRanges(filteredRangeListForTwoSteps, column, ob.value);
+              }
             }
             if (lesser && !greater) {
               const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el <= Math.round(this.max / 2));
-              this.filterRanges(filteredRangeListForTwoSteps, column);
+              if(id){
+                this.filterRanges(filteredRangeListForTwoSteps, column, ob.value, id);
+              }else{
+                this.filterRanges(filteredRangeListForTwoSteps, column, ob.value);
+              }
             }
             if (lesser && greater || ob.value.includes('All')) {
               const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el <= Math.round(this.max) && el >= Math.round(this.min));
-              this.filterRanges(filteredRangeListForTwoSteps, column);
+              if(id){
+                this.filterRanges(filteredRangeListForTwoSteps, column, ob.value, id);
+              }else{
+                this.filterRanges(filteredRangeListForTwoSteps, column, ob.value);
+              }
               // this.filterRanges(column.list, column);
             }
           }
@@ -248,7 +294,11 @@ export class AgTableComponent implements OnInit, AfterViewInit {
               filteredRangeList = column.list?.filter((el: number) => el >= minimum && el <= maximum);
             }
           })
-          this.filterRanges(filteredRangeList, column);
+          if(id){
+            this.filterRanges(filteredRangeList, column, ob.value, id);
+          }else{
+            this.filterRanges(filteredRangeList, column, ob.value);
+          }
         }
       } else {
         let columnListForTwoSteps = column.list;
@@ -257,15 +307,27 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         let greater = ob.value.find((elm: string) => elm.includes('Greater'));
         if (greater && !lesser) {
           const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el > Math.round(parseFloat(column.stepsInfo ? column.stepsInfo?.max : '') / 2));
-          this.filterRanges(filteredRangeListForTwoSteps, column);
+          if(id){
+            this.filterRanges(filteredRangeListForTwoSteps, column, ob.value, id);
+          }else{
+            this.filterRanges(filteredRangeListForTwoSteps, column, ob.value);
+          }
         }
         if (lesser && !greater) {
           const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el <= Math.round(parseFloat(column.stepsInfo ? column.stepsInfo?.max : '') / 2));
-          this.filterRanges(filteredRangeListForTwoSteps, column);
+          if(id){
+            this.filterRanges(filteredRangeListForTwoSteps, column, ob.value, id);
+          }else{
+            this.filterRanges(filteredRangeListForTwoSteps, column, ob.value);
+          }
         }
         if (lesser && greater || ob.value.includes('All')) {
           const filteredRangeListForTwoSteps = columnListForTwoSteps.filter((el: number) => el <= parseFloat(column.stepsInfo ? column.stepsInfo?.max : '') && el >= parseFloat(column.stepsInfo ? column.stepsInfo?.min : ''));
-          this.filterRanges(filteredRangeListForTwoSteps, column);
+          if(id){
+            this.filterRanges(filteredRangeListForTwoSteps, column, ob.value, id);
+          }else{
+            this.filterRanges(filteredRangeListForTwoSteps, column, ob.value);
+          }
           // this.filterRanges(column.list, column);
         }
       }
@@ -273,13 +335,23 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   //filter search list 
-  filterSearchList(input: any, col: Columns) {
+  filterSearchList(input: any, col: Columns, id?: number) {
     if (input.value == '') {
       this.columns.forEach(column => {
         if (column.header == col.header) {
           column.filteredList = column.options;
-          this.filterDictionary.set(column.field, column.options.toString());
-          this.setDataFilter(column, true);
+          if(id){
+            if(this.generatedTablesFilterDictionary.length){
+              this.setFilterDictionaryInGeneratedTablesForSearchList(id,column)
+            }else{
+              this.generatedTablesFilterDictionary.push({id: id,filterDictionary:new Map<string,string>()});
+              this.setFilterDictionaryInGeneratedTablesForSearchList(id,column)
+            }
+            this.setDataFilter(column, true, id);
+          }else{
+            this.filterDictionary.set(column.field, column.options.toString());
+            this.setDataFilter(column, true);            
+          }
         }
       })
     } else {
@@ -298,6 +370,14 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     }
   }
 
+  setFilterDictionaryInGeneratedTablesForSearchList(id: number, column: Columns) {
+    this.generatedTablesFilterDictionary.forEach(data => {
+      if(data.id === id){
+        data.filterDictionary.set(column.field, column.options.toString());
+      }
+    })
+  }
+
   checkStringInString(option: string, filterValue: any) {
     let include = false;
     option.split(",").forEach((el) => {
@@ -309,16 +389,33 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   //filter for search type
-  applyFilterForSearch(input: any, column: Columns): void {
-    this.filterDictionary.set(column.field, input);
-    this.setDataFilter(column, true);
+  applyFilterForSearch(input: any, column: Columns, id?: number): void {
+    if(id){
+      if(this.generatedTablesFilterDictionary.length){
+        this.setFilterDictionaryInGeneratedTablesForSearch(id,column,input);
+      }else{
+        this.generatedTablesFilterDictionary.push({id: id,filterDictionary:new Map<string,string>()});
+        this.setFilterDictionaryInGeneratedTablesForSearch(id,column,input);
+      }
+      this.setDataFilter(column, true, id);
+    }else{
+      this.filterDictionary.set(column.field, input);
+      this.setDataFilter(column, true);
+    }
   }
 
-  //apply filter for date type
-  applyFilterForDate(input: any, column: Columns): void {
-    this.filterDictionary.set(column.field, input?.value);
-    this.setDataFilter(column, true);
+  setFilterDictionaryInGeneratedTablesForSearch(id: number, column: Columns, input: string) {
+    this.generatedTablesFilterDictionary.forEach(data => {
+      if(data.id === id){
+        data.filterDictionary.set(column.field, input);
+      }
+    })
   }
+  //apply filter for date type
+  // applyFilterForDate(input: any, column: Columns): void {
+  //   this.filterDictionary.set(column.field, input?.value);
+  //   this.setDataFilter(column, true);
+  // }
 
   //filter through search in select type
   filterSearchedinSelectList(input: any, col: Columns) {
@@ -354,7 +451,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   //filter for range type
-  filterRanges(list: any[], column: Columns): void {
+  filterRanges(list: any[], column: Columns, selectedRanges: string[], id?: number): void {
     let filtered: string[] = [];
     for (let x of list) {
       if (column.haveSpaceForSymbol) {
@@ -363,28 +460,87 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         filtered.push(`${x}${column.symbol}`);
       }
     }
-    this.filterDictionary.set(column.field, filtered.join(','));
-    this.setDataFilter(column, true);
+    if(id){
+      if(this.generatedTablesFilterDictionary.length){
+        this.setFilterDictionaryInGeneratedTablesForSelectedAndRangesAndDate(id,column,filtered);
+      }else{
+        this.generatedTablesFilterDictionary.push({id: id,filterDictionary:new Map<string,string>()});
+        this.setFilterDictionaryInGeneratedTablesForSelectedAndRangesAndDate(id,column,filtered);
+      }
+      this.setDataFilter(column, true, selectedRanges, id);
+    }else{
+      this.filterDictionary.set(column.field, filtered.join(','));
+      this.setDataFilter(column, true, selectedRanges);
+    }
   }
 
   //filter for select type
-  filterSelected(list: any[], column: Columns): void {
-    this.filterDictionary.set(column.field, list.join(','),);
-    this.setDataFilter(column, true);
+  filterSelected(list: any[], column: Columns, id?:number): void {
+    if(id){
+      if(this.generatedTablesFilterDictionary.length){
+        this.setFilterDictionaryInGeneratedTablesForSelectedAndRangesAndDate(id,column,list)
+      }else{
+        this.generatedTablesFilterDictionary.push({id: id,filterDictionary:new Map<string,string>()});
+        this.setFilterDictionaryInGeneratedTablesForSelectedAndRangesAndDate(id,column,list)
+      }
+      this.setDataFilter(column, true, id);
+    }else{
+      this.filterDictionary.set(column.field, list.join(','));
+      this.setDataFilter(column, true);
+    }
+  }
+
+  setFilterDictionaryInGeneratedTablesForSelectedAndRangesAndDate(id: number, column: Columns, list: any[]) {
+    this.generatedTablesFilterDictionary.forEach(data => {
+      if(data.id === id){
+        data.filterDictionary.set(column.field, list.join(','));
+      }
+    })
   }
 
   //to set filters of data
-  setDataFilter(column: Columns, saveFilter: boolean): void {
-    var jsonStr = JSON.stringify(Array.from(this.filterDictionary.entries()));
-    this.data.filter = jsonStr;
-    if (saveFilter) {
-      this.allFilters = Array.from(this.filterDictionary.entries()).map(entry => {
-        return {
-          column: entry[0],
-          filters: entry[1].split(','),
-          type: column.type
+  setDataFilter(column: Columns, saveFilter: boolean, selectedRanges?: any, id?: number): void {
+    if(id){
+      this.tablesDataSource.forEach(data => {
+        if(data.id === id){
+          var jsonStr = JSON.stringify(Array.from(data.filterDictionary.entries()));
+          data.tableDataSource.filter = jsonStr;
         }
       })
+    }else{
+      var jsonStr = JSON.stringify(Array.from(this.filterDictionary.entries()));
+      this.data.filter = jsonStr;
+      if (saveFilter) {
+        Array.from(this.filterDictionary.entries()).map(entry => {
+          if(column.field === entry[0]){
+            this.allFilters.forEach(element => {
+              if(element.column === entry[0]){
+                element.filters = entry[1].split(" ,")
+                element.type = column.type
+                if(selectedRanges){
+                  element.selectedRanges = selectedRanges
+                }
+              }
+            })
+            if(!this.allFilters.find(element => element.column === entry[0])){
+              if(selectedRanges){
+                this.allFilters.push({
+                  column: entry[0],
+                  filters: entry[1].split(','),
+                  type: column.type,
+                  selectedRanges: selectedRanges
+                })
+              }else{
+              this.allFilters.push({
+                column: entry[0],
+                filters: entry[1].split(','),
+                type: column.type
+              })
+              }
+            }
+        }
+        })
+    }
     }
   }
 
@@ -415,7 +571,7 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     })
   }
 
-  onDateChange(event: { value: string | number | Date; }, action: string, column: Columns) {
+  onDateChange(event: { value: string | number | Date; }, action: string, column: Columns, id?: number) {
     let startDate: string | number | null;
     let endDate: string | number | null;
     if (action === 'start') {
@@ -435,22 +591,34 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         }
       })
     }
+    let selectedDateRange: any;
     this.datesColumns.forEach(col => {
       if (col[column.header] && col[column.header]?.start && col[column.header]?.end) {
         const list = column.options.map(el => el.val).filter((el: string) => {
           if (el) {
+            selectedDateRange = {start: col[column.header].start, end: col[column.header].end};
             return el >= col[column.header].start && el <= col[column.header].end;
           } else {
             return false;
           }
         })
-        this.filterDictionary.set(column.field, list.join(','));
-        this.setDataFilter(column, true);
+        if(id){
+          if(this.generatedTablesFilterDictionary.length){
+            this.setFilterDictionaryInGeneratedTablesForSelectedAndRangesAndDate(id,column,list)
+          }else{
+            this.generatedTablesFilterDictionary.push({id: id,filterDictionary:new Map<string,string>()});
+            this.setFilterDictionaryInGeneratedTablesForSelectedAndRangesAndDate(id,column,list)
+          }
+          this.setDataFilter(column, true, selectedDateRange, id);
+        }else{
+          this.filterDictionary.set(column.field, list.join(','));
+          this.setDataFilter(column, true, selectedDateRange);
+        }
       }
     })
   }
 
-  clearDate(event: { stopPropagation: () => void; }, column: Columns) {
+  clearDate(event: { stopPropagation: () => void; }, column: Columns, id?: number) {
     // event.stopPropagation();
     this.datesForm.get(`start${[column.header]}`)?.setValue(null);
     this.datesForm.get(`end${[column.header]}`)?.setValue(null);
@@ -460,8 +628,26 @@ export class AgTableComponent implements OnInit, AfterViewInit {
         el[column.header].start = null;
       }
     })
-    this.filterDictionary.set(column.field, column.options.map(el => el.val).toString());
-    this.setDataFilter(column, true);
+    if(id){
+      if(this.generatedTablesFilterDictionary.length){
+        this.setFilterDictionaryInGeneratedTablesForClearDate(id,column)
+      }else{
+        this.generatedTablesFilterDictionary.push({id: id,filterDictionary:new Map<string,string>()});
+        this.setFilterDictionaryInGeneratedTablesForClearDate(id,column)
+      }
+      this.setDataFilter(column, true, id);
+    }else{
+      this.filterDictionary.set(column.field, column.options.map(el => el.val).toString());
+      this.setDataFilter(column, true);
+    }
+  }
+
+  setFilterDictionaryInGeneratedTablesForClearDate(id: number, column: Columns) {
+    this.generatedTablesFilterDictionary.forEach(data => {
+      if(data.id === id){
+        data.filterDictionary.set(column.field, column.options.map(el => el.val).toString());
+      }
+    })
   }
 
   //getFilters
@@ -470,24 +656,37 @@ export class AgTableComponent implements OnInit, AfterViewInit {
     console.log(this.allFilters)
   }
 
-  clearSelectedOptions(matselect: MatSelect, column: Columns) {
+  clearSelectedOptions(matselect: MatSelect, column: Columns, id?: number) {
     matselect.options.forEach((item: MatOption) => {
       item.deselect();
     });
-    this.filterDictionary.set(column.field, column.options.map(el => el.val).toString());
-    this.setDataFilter(column, true);
+    if(id){
+      if(this.generatedTablesFilterDictionary.length){
+        this.setFilterDictionaryInGeneratedTablesForClearDate(id,column)
+      }else{
+        this.generatedTablesFilterDictionary.push({id: id,filterDictionary:new Map<string,string>()});
+        this.setFilterDictionaryInGeneratedTablesForClearDate(id,column)
+      }
+      this.setDataFilter(column, true, id);
+    }else{
+      this.filterDictionary.set(column.field, column.options.map(el => el.val).toString());
+      this.setDataFilter(column, true);
+    }
   }
 
   stop(event: any) {
     event.stopPropagation();
   }
 
-  submitRangeForm(col: Columns, rangeForm: any, matRef: MatSelect) {
-    console.log(rangeForm)
+  submitRangeForm(col: Columns, rangeForm: any, matRef: MatSelect,id?: number) {
     if(this.validRangeSubmitBtn(col,rangeForm)){
       if (col.list) {
-        this.filterRanges(col.list, col);
         this._agTableService.getCustomDropdownListForRange(col, rangeForm.value);
+        if(id){
+          this.filterRanges(col.list, col, col.options.map(option => option.val), id);
+        }else{
+          this.filterRanges(col.list, col, col.options.map(option => option.val));
+        }
       }
   
       matRef.options.forEach(option => {
@@ -499,7 +698,6 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   validRangeSubmitBtn(col: Columns, formValue: any) {
-    console.log(formValue.value,formValue.get('maxAvailable Cash Settlement Amount').value,formValue.get(`min${col.header}`).value,col,"submit")
     if(formValue.get(`min${col.header}`).value && formValue.get(`max${col.header}`).value && formValue.get(`steps${col.header}`).value){
       return true;
     }
@@ -507,7 +705,23 @@ export class AgTableComponent implements OnInit, AfterViewInit {
   }
 
   checkRangeFormField(column: Columns,rangesForm: any){
-    return !rangesForm.get('min'+column.header).value || !rangesForm.get('max'+column.header).value || !rangesForm.get('steps'+column.header).value
+    return !rangesForm.get(`min${column.header}`).value || !rangesForm.get(`max${column.header}`).value || !rangesForm.get(`steps${column.header}`).value
+  }
+
+  saveFilters() {
+    this.isLoading = true;
+    let tableDataSource = new MatTableDataSource(this.dataSource);
+    this.filterPredicate(tableDataSource);
+    let index = this.tablesDataSource.length;
+    setTimeout(() => {
+      tableDataSource.paginator = this.newTablePaginator.toArray()[index+1];
+      tableDataSource.sort = this.newTableSort.toArray()[index+1];  
+        }); 
+    var jsonStr = JSON.stringify(Array.from(this.filterDictionary.entries()));
+    tableDataSource.filter = jsonStr;
+    this.tablesDataSource.push({tableDataSource:tableDataSource,id:index + 1});
+    this.isLoading = false;
+    console.log(this.tablesDataSource,this.filterDictionary,this.data,this.generatedTablesFilterDictionary)
   }
 
 }
